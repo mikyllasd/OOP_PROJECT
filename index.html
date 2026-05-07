@@ -4,12 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fruit Catcher Game</title>
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="c:\Users\acer\Videos\OOP FINAL PROJECT\OOP_PROJECT\css\style.css">
 </head>
 <body>
 <canvas id="stars-canvas"></canvas>
 <div id="gc">
 
+  <!-- LANDING -->
   <div id="landing" class="screen active">
     <div class="cloud" style="width:140px;height:50px;top:60px;left:8%"></div>
     <div class="cloud" style="width:90px;height:34px;top:90px;left:24%"></div>
@@ -19,11 +20,15 @@
       <span class="landing-icon">🍎</span>
       <div class="landing-title">Fruit Catcher</div>
       <p class="landing-sub">Catch fruits, earn coins, build your dream home!</p>
-      <button class="btn btn-primary" onclick="showScreen('charsel')">Get Started!</button>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="showScreen('charsel')">Get Started!</button>
+        <button class="btn btn-secondary" onclick="showScreen('leaderboard-screen')">🏆 Top Scores</button>
+      </div>
     </div>
     <div style="position:absolute;bottom:22px;font-size:13px;color:rgba(255,255,255,0.5);z-index:1">Move mouse or drag finger to control basket</div>
   </div>
 
+  <!-- CHAR SELECT -->
   <div id="charsel" class="screen">
     <h2>Choose Your Farmer</h2>
     <div class="char-cards">
@@ -44,6 +49,7 @@
     </div>
   </div>
 
+  <!-- GAME SCREEN -->
   <div id="gamescreen" class="screen">
     <div id="sky-bg"></div>
     <div id="hud">
@@ -51,7 +57,11 @@
       <div class="hud-item">Score: <span id="hud-score">0</span> / <span id="hud-target">100</span></div>
       <div class="hud-item" id="hud-timer">⏱ 3:00</div>
       <div class="hud-item">💰 <span id="hud-coins">0</span></div>
+      <div class="hud-item" id="hud-combo" style="display:none">🔥 x<span id="hud-multi">1</span></div>
       <div class="hud-spacer"></div>
+      <button class="hud-btn" id="mute-btn" onclick="toggleMute()">🔊</button>
+      <button class="hud-btn" onclick="showAchievements()">🏆</button>
+      <button class="hud-btn" onclick="pauseGame()">⏸</button>
       <button class="hud-btn" onclick="openUpgrade()">🏠 House</button>
       <button class="hud-btn" onclick="openShop()">🛍 Shop</button>
     </div>
@@ -64,6 +74,7 @@
       <div id="basket">🧺</div>
       <div id="farmer">👨‍🌾</div>
       <canvas id="particle-canvas"></canvas>
+      <!-- LEVEL UP OVERLAY -->
       <div id="levelup-overlay">
         <div class="levelup-box">
           <div class="lu-icon">🎉</div>
@@ -72,23 +83,69 @@
           <button class="btn btn-primary" onclick="nextLevel()">Continue!</button>
         </div>
       </div>
+      <!-- PAUSE OVERLAY -->
+      <div id="pause-overlay">
+        <div class="pause-box">
+          <div style="font-size:48px;margin-bottom:8px">⏸</div>
+          <h2 style="color:#fff;font-size:28px;margin-bottom:20px">Paused</h2>
+          <div class="pause-stats">
+            <div class="pause-stat"><span>Level</span><strong id="pause-lvl">1</strong></div>
+            <div class="pause-stat"><span>Score</span><strong id="pause-score">0</strong></div>
+            <div class="pause-stat"><span>Timer</span><strong id="pause-timer">3:00</strong></div>
+            <div class="pause-stat"><span>Coins</span><strong id="pause-coins">0</strong></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;width:100%">
+            <button class="btn btn-primary" onclick="resumeFromPause()">▶ Resume</button>
+            <button class="btn btn-secondary" onclick="openShopFromPause()">🛍 Shop</button>
+            <button class="btn btn-secondary" onclick="openUpgradeFromPause()">🏠 House</button>
+            <button class="btn btn-secondary" onclick="showScreen('landing');clearAll()">🚪 Quit to Menu</button>
+          </div>
+        </div>
+      </div>
+      <!-- COMBO FLASH -->
+      <div id="combo-flash"></div>
+      <!-- MISS WARNING -->
+      <div id="miss-warning"></div>
+      <!-- HOUSE NAME ANNOUNCE -->
+      <div id="house-announce"></div>
+      <!-- TUTORIAL OVERLAY -->
+      <div id="tutorial-overlay">
+        <div id="tutorial-hand">👆</div>
+        <div id="tutorial-text">
+          <div class="tut-label" style="top:60px;left:50%;transform:translateX(-50%)">⬆ Your Score &amp; Level</div>
+          <div class="tut-label" style="top:60px;right:80px">⬆ Timer &amp; Coins</div>
+          <div class="tut-label" id="tut-basket-label">Move here to catch fruits!</div>
+        </div>
+        <div style="position:absolute;bottom:40px;left:50%;transform:translateX(-50%);color:#fff;font-size:14px;opacity:0.8">Tap anywhere to dismiss</div>
+      </div>
     </div>
   </div>
 
+  <!-- GAME OVER -->
   <div id="gameover" class="screen">
-    <div class="go-icon">😢</div>
-    <h2 class="go-title">Game Over!</h2>
+    <div id="go-new-record" style="display:none">🎉 NEW RECORD! 🎉</div>
+    <div class="go-icon" id="go-icon">😢</div>
+    <h2 class="go-title" id="go-title">Game Over!</h2>
+    <p id="go-subtitle" style="color:rgba(255,255,255,0.6);margin-bottom:12px;font-size:15px"></p>
+    <!-- Name input -->
+    <div id="go-name-section" style="margin-bottom:16px;text-align:center">
+      <p style="color:rgba(255,255,255,0.7);font-size:14px;margin-bottom:8px">Enter your name for the leaderboard:</p>
+      <input id="go-name-input" type="text" maxlength="16" placeholder="Your name..." style="padding:10px 18px;border-radius:20px;border:1.5px solid rgba(249,168,37,0.5);background:rgba(255,255,255,0.08);color:#fff;font-size:15px;text-align:center;outline:none;width:200px">
+    </div>
     <div class="go-stats">
       <div class="go-stat"><span class="go-stat-label">Level Reached</span><span class="go-stat-val" id="go-level">1</span></div>
       <div class="go-stat"><span class="go-stat-label">Final Score</span><span class="go-stat-val" id="go-score">0</span></div>
       <div class="go-stat"><span class="go-stat-label">Total Coins</span><span class="go-stat-val" id="go-coins">0</span></div>
+      <div class="go-stat" id="go-rank-stat" style="display:none"><span class="go-stat-label">Your Rank</span><span class="go-stat-val" id="go-rank">#-</span></div>
+      <div class="go-stat" id="go-ach-stat" style="display:none"><span class="go-stat-label">Achievements</span><span class="go-stat-val" id="go-ach-count">0</span></div>
     </div>
-    <div style="display:flex;gap:14px">
+    <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center">
       <button class="btn btn-secondary" onclick="showScreen('landing')">Main Menu</button>
-      <button class="btn btn-primary" onclick="retryGame()">Try Again!</button>
+      <button class="btn btn-primary" onclick="saveScoreAndRetry()">Try Again!</button>
     </div>
   </div>
 
+  <!-- SHOP -->
   <div id="shop-screen" class="screen">
     <h2 class="screen-title">🛍 Shop</h2>
     <div class="coins-badge">💰 <span id="shop-coins">0</span> coins</div>
@@ -96,6 +153,7 @@
     <button class="btn btn-secondary" style="margin-top:22px" onclick="closeShop()">Back to Game</button>
   </div>
 
+  <!-- UPGRADE -->
   <div id="upgrade-screen" class="screen">
     <h2 class="screen-title">🏠 House Upgrade</h2>
     <div class="upg-box">
@@ -110,7 +168,24 @@
     <button class="btn btn-secondary" style="margin-top:22px" onclick="closeUpgrade()">Back to Game</button>
   </div>
 
+  <!-- LEADERBOARD -->
+  <div id="leaderboard-screen" class="screen">
+    <h2 class="screen-title">🏆 Top Scores</h2>
+    <div id="leaderboard-list" style="width:100%;max-width:420px;padding:0 16px"></div>
+    <button class="btn btn-secondary" style="margin-top:22px" onclick="showScreen('landing')">Back</button>
+  </div>
+
+  <!-- ACHIEVEMENTS PANEL -->
+  <div id="achievements-screen" class="screen">
+    <h2 class="screen-title">🏆 Achievements</h2>
+    <div id="ach-grid" style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;max-width:600px;padding:0 16px;overflow-y:auto;max-height:60dvh"></div>
+    <button class="btn btn-secondary" style="margin-top:22px" onclick="closeAchievements()">Back to Game</button>
+  </div>
+
+  <!-- ACHIEVEMENT TOAST -->
+  <div id="ach-toast"></div>
+
 </div>
-<script src="script/script.js"></script>
+<script src="c:\Users\acer\Videos\OOP FINAL PROJECT\OOP_PROJECT\script\script.js"></script>
 </body>
 </html>
