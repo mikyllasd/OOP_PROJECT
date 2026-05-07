@@ -4,23 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fruit Catcher Game</title>
-<link rel="stylesheet" href="c:\Users\acer\Videos\OOP FINAL PROJECT\OOP_PROJECT\css\style.css">
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+<canvas id="stars-canvas"></canvas>
 <div id="gc">
 
   <div id="landing" class="screen active">
-    <div class="cloud" style="width:130px;height:48px;top:60px;left:8%"></div>
-    <div class="cloud" style="width:85px;height:32px;top:85px;left:22%"></div>
-    <div class="cloud" style="width:160px;height:58px;top:38px;right:6%"></div>
-    <div class="cloud" style="width:95px;height:36px;top:115px;right:20%"></div>
-    <div style="text-align:center;z-index:1">
-      <div style="font-size:80px;margin-bottom:8px">🍎</div>
-      <h1>Fruit Catcher</h1>
-      <p>Catch fruits, earn coins, build your dream home!</p>
+    <div class="cloud" style="width:140px;height:50px;top:60px;left:8%"></div>
+    <div class="cloud" style="width:90px;height:34px;top:90px;left:24%"></div>
+    <div class="cloud" style="width:170px;height:60px;top:40px;right:6%"></div>
+    <div class="cloud" style="width:100px;height:38px;top:120px;right:20%"></div>
+    <div style="text-align:center;z-index:1;position:relative">
+      <span class="landing-icon">🍎</span>
+      <div class="landing-title">Fruit Catcher</div>
+      <p class="landing-sub">Catch fruits, earn coins, build your dream home!</p>
       <button class="btn btn-primary" onclick="showScreen('charsel')">Get Started!</button>
     </div>
-    <div style="position:absolute;bottom:20px;font-size:13px;color:rgba(255,255,255,0.75)">Move mouse or drag finger to control basket</div>
+    <div style="position:absolute;bottom:22px;font-size:13px;color:rgba(255,255,255,0.5);z-index:1">Move mouse or drag finger to control basket</div>
   </div>
 
   <div id="charsel" class="screen">
@@ -44,6 +45,7 @@
   </div>
 
   <div id="gamescreen" class="screen">
+    <div id="sky-bg"></div>
     <div id="hud">
       <div class="hud-item">Lv <span id="hud-lvl">1</span></div>
       <div class="hud-item">Score: <span id="hud-score">0</span> / <span id="hud-target">100</span></div>
@@ -58,13 +60,13 @@
         <div class="house-emo" id="house-side-emo">🏚️</div>
         <div class="house-lbl" id="house-side-lbl">Stage 1</div>
       </div>
-      <div class="grass-top"></div>
       <div class="ground"></div>
       <div id="basket">🧺</div>
       <div id="farmer">👨‍🌾</div>
+      <canvas id="particle-canvas"></canvas>
       <div id="levelup-overlay">
         <div class="levelup-box">
-          <div style="font-size:64px">🎉</div>
+          <div class="lu-icon">🎉</div>
           <h2>Level Up!</h2>
           <p id="lu-msg">You reached level 2!</p>
           <button class="btn btn-primary" onclick="nextLevel()">Continue!</button>
@@ -74,12 +76,12 @@
   </div>
 
   <div id="gameover" class="screen">
-    <div style="font-size:72px;margin-bottom:8px">😢</div>
-    <h2>Game Over!</h2>
+    <div class="go-icon">😢</div>
+    <h2 class="go-title">Game Over!</h2>
     <div class="go-stats">
-      <p>Level Reached: <strong id="go-level">1</strong></p>
-      <p>Final Score: <strong id="go-score">0</strong></p>
-      <p>Total Coins: <strong id="go-coins">0</strong></p>
+      <div class="go-stat"><span class="go-stat-label">Level Reached</span><span class="go-stat-val" id="go-level">1</span></div>
+      <div class="go-stat"><span class="go-stat-label">Final Score</span><span class="go-stat-val" id="go-score">0</span></div>
+      <div class="go-stat"><span class="go-stat-label">Total Coins</span><span class="go-stat-val" id="go-coins">0</span></div>
     </div>
     <div style="display:flex;gap:14px">
       <button class="btn btn-secondary" onclick="showScreen('landing')">Main Menu</button>
@@ -88,14 +90,14 @@
   </div>
 
   <div id="shop-screen" class="screen">
-    <h2>🛍 Shop</h2>
-    <div style="font-size:16px;color:#fff;margin-bottom:14px;font-weight:700">💰 Coins: <span id="shop-coins">0</span></div>
+    <h2 class="screen-title">🛍 Shop</h2>
+    <div class="coins-badge">💰 <span id="shop-coins">0</span> coins</div>
     <div class="shop-grid" id="shop-grid"></div>
     <button class="btn btn-secondary" style="margin-top:22px" onclick="closeShop()">Back to Game</button>
   </div>
 
   <div id="upgrade-screen" class="screen">
-    <h2>🏠 House Upgrade</h2>
+    <h2 class="screen-title">🏠 House Upgrade</h2>
     <div class="upg-box">
       <div class="upg-emo" id="upg-emo">🏚️</div>
       <div class="upg-name" id="upg-name">Old Shack</div>
@@ -109,6 +111,6 @@
   </div>
 
 </div>
-<script src="c:\Users\acer\Videos\OOP FINAL PROJECT\OOP_PROJECT\script\script.js"></script>
+<script src="script/script.js"></script>
 </body>
 </html>
