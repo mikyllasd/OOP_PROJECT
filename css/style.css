@@ -18,7 +18,7 @@ body {
   overflow: hidden;
 }
 
-/* STARS */
+/* ── STARS ───────────────────────────────────────────────────────── */
 #stars-canvas {
   position: fixed;
   inset: 0;
@@ -26,7 +26,7 @@ body {
   pointer-events: none;
 }
 
-/* SCREENS */
+/* ── SCREENS ─────────────────────────────────────────────────────── */
 .screen {
   display: none;
   width: 100%;
@@ -45,7 +45,7 @@ body {
   opacity: 1;
 }
 
-/* BUTTONS */
+/* ── BUTTONS ─────────────────────────────────────────────────────── */
 .btn {
   padding: 13px 32px;
   border: none;
@@ -59,6 +59,7 @@ body {
   overflow: hidden;
   min-height: 44px;
 }
+/* Ripple overlay on hover */
 .btn::after {
   content: '';
   position: absolute;
@@ -68,6 +69,8 @@ body {
 }
 .btn:hover::after { background: rgba(255,255,255,0.12); }
 .btn:active { transform: scale(0.95); }
+
+/* Primary orange gradient button */
 .btn-primary {
   background: linear-gradient(135deg, #f9a825, #ff6f00);
   color: #fff;
@@ -77,12 +80,16 @@ body {
   box-shadow: 0 6px 28px rgba(249,168,37,0.65);
   transform: translateY(-1px);
 }
+
+/* Secondary ghost button */
 .btn-secondary {
   background: rgba(255,255,255,0.1);
   color: #fff;
   border: 1.5px solid rgba(255,255,255,0.22);
   backdrop-filter: blur(8px);
 }
+
+/* Disabled state for both button types */
 .btn:disabled {
   opacity: 0.35;
   cursor: default;
@@ -90,15 +97,18 @@ body {
   box-shadow: none !important;
 }
 
+/* Larger touch targets on mobile */
 @media (pointer: coarse) {
   .btn { padding: 15px 36px; }
   .hud-btn { padding: 10px 18px !important; }
 }
 
-/* LANDING */
+/* ── LANDING SCREEN ──────────────────────────────────────────────── */
 #landing {
   background: linear-gradient(160deg, #0f0c29, #302b63, #24243e);
 }
+
+/* Floating fruit icon animation */
 .landing-icon {
   font-size: clamp(50px, 14vw, 90px);
   display: block;
@@ -110,6 +120,8 @@ body {
   0%, 100% { transform: translateY(0) rotate(-4deg); }
   50%       { transform: translateY(-14px) rotate(4deg); }
 }
+
+/* Gradient text title */
 .landing-title {
   font-size: clamp(28px, 8vw, 56px);
   font-weight: 900;
@@ -127,6 +139,8 @@ body {
   margin-bottom: 36px;
   text-align: center;
 }
+
+/* Decorative background clouds */
 .cloud {
   position: absolute;
   background: rgba(255,255,255,0.06);
@@ -135,7 +149,7 @@ body {
   border: 1px solid rgba(255,255,255,0.08);
 }
 
-/* CHAR SELECT */
+/* ── CHARACTER SELECT ────────────────────────────────────────────── */
 #charsel {
   background: linear-gradient(160deg, #0f0c29, #302b63, #24243e);
 }
@@ -147,6 +161,8 @@ body {
   letter-spacing: 0.4px;
 }
 .char-cards { display: flex; gap: 22px; flex-wrap: wrap; justify-content: center; }
+
+/* Individual character option card */
 .char-card {
   background: rgba(255,255,255,0.06);
   border-radius: 22px;
@@ -162,6 +178,8 @@ body {
   background: rgba(255,255,255,0.1);
   border-color: rgba(249,168,37,0.4);
 }
+
+/* Highlighted state when character is chosen */
 .char-card.selected {
   border-color: #f9a825;
   background: rgba(249,168,37,0.1);
@@ -171,12 +189,14 @@ body {
 .char-card h3 { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 4px; }
 .char-card p  { font-size: 13px; color: rgba(255,255,255,0.5); }
 
-/* GAME SCREEN */
+/* ── GAME SCREEN ─────────────────────────────────────────────────── */
 #gamescreen {
   flex-direction: column;
   justify-content: flex-start;
   align-items: stretch;
 }
+
+/* Animated sky background — color changes per level via JS */
 #sky-bg {
   position: absolute;
   inset: 0;
@@ -184,6 +204,8 @@ body {
   z-index: 0;
   transition: background 2s ease;
 }
+
+/* ── HUD (heads-up display bar) ──────────────────────────────────── */
 #hud {
   width: 100%;
   background: rgba(0,0,0,0.4);
@@ -197,6 +219,8 @@ body {
   backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(255,255,255,0.08);
 }
+
+/* Individual pill-shaped stat display */
 .hud-item {
   background: rgba(255,255,255,0.1);
   border-radius: 12px;
@@ -210,6 +234,8 @@ body {
   border: 1px solid rgba(255,255,255,0.12);
   min-height: 44px;
 }
+
+/* Timer turns red and pulses when under 30 seconds */
 .hud-item.timer-warn {
   background: rgba(231,76,60,0.5);
   border-color: rgba(231,76,60,0.8);
@@ -219,7 +245,11 @@ body {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.6; }
 }
+
+/* Pushes action buttons to the right */
 .hud-spacer { flex: 1; }
+
+/* Small icon buttons in HUD (mute, pause, shop, etc.) */
 .hud-btn {
   background: rgba(255,255,255,0.1);
   border: 1px solid rgba(255,255,255,0.18);
@@ -227,22 +257,23 @@ body {
   padding: 6px 14px;
   font-size: 12px;
   font-weight: 700;
-  cursor: pointer;
+  cursor: pointer; /* Always show pointer on HUD buttons */
   color: #fff;
   transition: all 0.15s;
   min-height: 44px;
 }
 .hud-btn:hover { background: rgba(255,255,255,0.22); transform: translateY(-1px); }
 
+/* ── ARENA (main play area) ──────────────────────────────────────── */
 #arena {
   flex: 1;
   position: relative;
   width: 100%;
   overflow: hidden;
-  cursor: none;
+  /* cursor: none removed — arrow cursor now visible during play */
 }
 
-/* GROUND */
+/* ── GROUND ──────────────────────────────────────────────────────── */
 .ground {
   position: absolute;
   bottom: 0;
@@ -251,6 +282,8 @@ body {
   background: linear-gradient(180deg, #2e7d32, #1b5e20);
   z-index: 2;
 }
+
+/* Grass texture strip on top of the ground */
 .ground::before {
   content: '';
   position: absolute;
@@ -264,7 +297,9 @@ body {
   border-radius: 50% 50% 0 0;
 }
 
-/* GAME OBJECTS */
+/* ── GAME OBJECTS ────────────────────────────────────────────────── */
+
+/* The catch basket — follows mouse/touch */
 #basket {
   position: absolute;
   font-size: 40px;
@@ -274,6 +309,8 @@ body {
   filter: drop-shadow(0 4px 10px rgba(0,0,0,0.4));
   transition: transform 0.05s;
 }
+
+/* The farmer character standing at the bottom */
 #farmer {
   position: absolute;
   bottom: 0;
@@ -284,6 +321,8 @@ body {
   filter: drop-shadow(0 2px 8px rgba(0,0,0,0.35));
   transition: transform 0.1s ease;
 }
+
+/* Falling fruit items */
 .fruit {
   position: absolute;
   font-size: 32px;
@@ -291,6 +330,8 @@ body {
   z-index: 3;
   filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));
 }
+
+/* Score/penalty text that floats up on catch */
 .catch-fx {
   position: absolute;
   pointer-events: none;
@@ -306,7 +347,7 @@ body {
   to   { opacity: 0; transform: translateY(-65px) scale(0.8); }
 }
 
-/* PARTICLE CANVAS */
+/* ── PARTICLE CANVAS ─────────────────────────────────────────────── */
 #particle-canvas {
   position: absolute;
   inset: 0;
@@ -314,7 +355,7 @@ body {
   z-index: 8;
 }
 
-/* HOUSE SIDE */
+/* ── HOUSE SIDE PANEL ────────────────────────────────────────────── */
 #house-side {
   position: absolute;
   right: 14px;
@@ -323,6 +364,8 @@ body {
   z-index: 5;
   pointer-events: none;
 }
+
+/* Gently floating house emoji */
 .house-emo {
   font-size: 42px;
   filter: drop-shadow(0 3px 8px rgba(0,0,0,0.4));
@@ -333,6 +376,8 @@ body {
   0%, 100% { transform: translateY(0); }
   50%       { transform: translateY(-5px); }
 }
+
+/* Stage label under the house */
 .house-lbl {
   font-size: 11px;
   color: #fff;
@@ -344,7 +389,7 @@ body {
   border: 1px solid rgba(255,255,255,0.1);
 }
 
-/* LEVEL UP OVERLAY */
+/* ── LEVEL UP OVERLAY ────────────────────────────────────────────── */
 #levelup-overlay {
   display: none;
   position: absolute;
@@ -356,6 +401,7 @@ body {
   backdrop-filter: blur(6px);
 }
 #levelup-overlay.show { display: flex; }
+
 .levelup-box {
   background: linear-gradient(145deg, #1a1a2e, #16213e);
   border-radius: 26px;
@@ -365,6 +411,8 @@ body {
   border: 1px solid rgba(249,168,37,0.3);
   box-shadow: 0 0 60px rgba(249,168,37,0.2);
 }
+
+/* Icon spins in on level up */
 .lu-icon {
   font-size: 68px;
   animation: spinPop 0.5s ease-out 0.1s both;
@@ -392,7 +440,7 @@ body {
   margin-bottom: 24px;
 }
 
-/* PAUSE OVERLAY */
+/* ── PAUSE OVERLAY ───────────────────────────────────────────────── */
 #pause-overlay {
   display: none;
   position: absolute;
@@ -404,6 +452,7 @@ body {
   backdrop-filter: blur(8px);
 }
 #pause-overlay.show { display: flex; }
+
 .pause-box {
   background: linear-gradient(145deg, #1a1a2e, #16213e);
   border-radius: 26px;
@@ -415,6 +464,8 @@ body {
   box-shadow: 0 0 60px rgba(0,0,0,0.5);
   animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
 }
+
+/* 2-column grid of stat numbers */
 .pause-stats {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -429,10 +480,11 @@ body {
   flex-direction: column;
   gap: 4px;
 }
-.pause-stat span { font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; }
-.pause-stat strong { font-size: 20px; color: #ffd54f; }
+.pause-stat span     { font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; }
+.pause-stat strong   { font-size: 20px; color: #ffd54f; }
 
-/* COMBO FLASH */
+/* ── COMBO FLASH ─────────────────────────────────────────────────── */
+/* Big center-screen multiplier announcement */
 #combo-flash {
   position: absolute;
   top: 50%;
@@ -458,7 +510,8 @@ body {
   100% { opacity: 0; transform: translate(-50%, -60%) scale(0.9); }
 }
 
-/* MISS WARNING */
+/* ── MISS WARNING ────────────────────────────────────────────────── */
+/* Red warning shown after 3 consecutive misses */
 #miss-warning {
   position: absolute;
   top: 30%;
@@ -482,7 +535,8 @@ body {
   100% { opacity: 0; transform: translateX(-50%) scale(0.9); }
 }
 
-/* HOUSE ANNOUNCE */
+/* ── HOUSE ANNOUNCE ──────────────────────────────────────────────── */
+/* Center popup when a house upgrade is purchased */
 #house-announce {
   position: absolute;
   top: 50%;
@@ -512,7 +566,7 @@ body {
   100% { opacity: 0; transform: translate(-50%, -60%); }
 }
 
-/* TUTORIAL */
+/* ── TUTORIAL OVERLAY ────────────────────────────────────────────── */
 #tutorial-overlay {
   display: none;
   position: absolute;
@@ -522,6 +576,8 @@ body {
   backdrop-filter: blur(2px);
 }
 #tutorial-overlay.show { display: block; }
+
+/* Animated hand that slides left/right */
 #tutorial-hand {
   position: absolute;
   font-size: 36px;
@@ -533,6 +589,8 @@ body {
   0%, 100% { transform: translateX(-60px); }
   50%       { transform: translateX(60px); }
 }
+
+/* Yellow pill labels pointing at UI elements */
 .tut-label {
   position: absolute;
   background: rgba(249,168,37,0.9);
@@ -555,12 +613,14 @@ body {
   animation: tutHand 1.6s ease-in-out infinite;
 }
 
-/* GAME OVER */
+/* ── GAME OVER SCREEN ────────────────────────────────────────────── */
 #gameover {
   background: linear-gradient(160deg, #0f0c29, #302b63, #24243e);
   overflow-y: auto;
   padding: 20px;
 }
+
+/* Pulsing new record banner */
 #go-new-record {
   font-size: 22px;
   font-weight: 900;
@@ -574,6 +634,8 @@ body {
   from { transform: scale(1); }
   to   { transform: scale(1.05); }
 }
+
+/* Wobbling face emoji */
 .go-icon {
   font-size: 80px;
   margin-bottom: 8px;
@@ -586,6 +648,8 @@ body {
   60%       { transform: rotate(-8deg); }
   80%       { transform: rotate(8deg); }
 }
+
+/* Default red title */
 .go-title {
   font-size: 44px;
   font-weight: 900;
@@ -595,11 +659,15 @@ body {
   background-clip: text;
   margin-bottom: 8px;
 }
+
+/* Gold title variant for legendary runs */
 .go-title.gold {
   background: linear-gradient(90deg, #ffd54f, #ff8f00);
   -webkit-background-clip: text;
   background-clip: text;
 }
+
+/* Row of end-of-game stat cards */
 .go-stats {
   display: flex;
   gap: 16px;
@@ -631,7 +699,7 @@ body {
   color: #ffd54f;
 }
 
-/* SCREEN TITLES */
+/* ── SHARED SCREEN TITLES ────────────────────────────────────────── */
 .screen-title {
   font-size: 28px;
   color: #fff;
@@ -639,6 +707,8 @@ body {
   margin-bottom: 14px;
   letter-spacing: 0.4px;
 }
+
+/* Gold coin balance badge */
 .coins-badge {
   font-size: 15px;
   font-weight: 700;
@@ -650,11 +720,13 @@ body {
   margin-bottom: 18px;
 }
 
-/* SHOP */
+/* ── SHOP SCREEN ─────────────────────────────────────────────────── */
 #shop-screen {
   background: linear-gradient(160deg, #0f0c29, #302b63, #24243e);
   overflow-y: auto;
 }
+
+/* Responsive wrapping grid of items */
 .shop-grid {
   display: flex;
   gap: 14px;
@@ -663,6 +735,8 @@ body {
   max-width: 660px;
   padding: 4px;
 }
+
+/* Individual shop item card */
 .shop-item {
   background: rgba(255,255,255,0.06);
   border-radius: 20px;
@@ -674,10 +748,15 @@ body {
   backdrop-filter: blur(8px);
 }
 .shop-item:hover { transform: translateY(-4px); border-color: rgba(249,168,37,0.4); }
+
+/* Green tint when already purchased */
 .shop-item.owned { border-color: rgba(76,175,80,0.5); background: rgba(76,175,80,0.08); }
-.shop-item .si-emo { font-size: 38px; margin-bottom: 8px; }
+
+.shop-item .si-emo  { font-size: 38px; margin-bottom: 8px; }
 .shop-item .si-name { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 4px; }
 .shop-item .si-cost { font-size: 12px; color: #ffd54f; font-weight: 700; }
+
+/* Buy / Owned button inside each shop card */
 .shop-item .si-btn {
   margin-top: 10px;
   width: 100%;
@@ -692,13 +771,15 @@ body {
   transition: all 0.15s;
   min-height: 36px;
 }
-.shop-item .si-btn:hover { transform: scale(1.05); }
+.shop-item .si-btn:hover    { transform: scale(1.05); }
 .shop-item .si-btn:disabled { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.35); cursor: default; transform: none; }
 
-/* UPGRADE */
+/* ── HOUSE UPGRADE SCREEN ────────────────────────────────────────── */
 #upgrade-screen {
   background: linear-gradient(160deg, #0f0c29, #302b63, #24243e);
 }
+
+/* Card container for upgrade info */
 .upg-box {
   background: rgba(255,255,255,0.06);
   border-radius: 24px;
@@ -709,14 +790,18 @@ body {
   border: 1px solid rgba(255,255,255,0.12);
   backdrop-filter: blur(12px);
 }
+
+/* Floating house emoji in upgrade card */
 .upg-emo {
   font-size: 68px;
   margin-bottom: 10px;
   display: block;
   animation: houseFloat 3s ease-in-out infinite;
 }
-.upg-name { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.upg-name  { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 4px; }
 .upg-stage { font-size: 13px; color: rgba(255,255,255,0.45); margin-bottom: 16px; }
+
+/* Progress bar track */
 .upg-bar-wrap {
   background: rgba(255,255,255,0.1);
   border-radius: 10px;
@@ -724,6 +809,8 @@ body {
   margin-bottom: 20px;
   overflow: hidden;
 }
+
+/* Orange fill that grows with each upgrade */
 .upg-bar {
   height: 12px;
   background: linear-gradient(90deg, #f9a825, #ff6f00);
@@ -731,15 +818,17 @@ body {
   transition: width 0.5s cubic-bezier(0.34,1.56,0.64,1);
   box-shadow: 0 0 10px rgba(249,168,37,0.5);
 }
-.upg-next { font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 14px; }
+.upg-next  { font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 14px; }
 .coins-info { font-size: 16px; font-weight: 700; color: #ffd54f; margin-bottom: 16px; }
 
-/* LEADERBOARD */
+/* ── LEADERBOARD SCREEN ──────────────────────────────────────────── */
 #leaderboard-screen {
   background: linear-gradient(160deg, #0f0c29, #302b63, #24243e);
   overflow-y: auto;
   padding: 20px;
 }
+
+/* Single leaderboard entry row */
 .lb-row {
   display: flex;
   align-items: center;
@@ -752,21 +841,28 @@ body {
   color: #fff;
   font-weight: 600;
 }
+
+/* Medal-coloured rows for top 3 */
 .lb-row.gold   { background: rgba(255,213,79,0.12);  border-color: rgba(255,213,79,0.4); }
 .lb-row.silver { background: rgba(192,192,192,0.1);  border-color: rgba(192,192,192,0.3); }
 .lb-row.bronze { background: rgba(205,127,50,0.1);   border-color: rgba(205,127,50,0.3); }
-.lb-row.mine   { background: rgba(100,200,255,0.12); border-color: rgba(100,200,255,0.4); }
-.lb-rank { font-size: 18px; width: 30px; text-align: center; }
-.lb-name { flex: 1; font-size: 15px; }
-.lb-score { font-size: 15px; color: #ffd54f; }
-.lb-meta { font-size: 11px; color: rgba(255,255,255,0.5); }
 
-/* ACHIEVEMENTS */
+/* Highlight for the current player's score */
+.lb-row.mine   { background: rgba(100,200,255,0.12); border-color: rgba(100,200,255,0.4); }
+
+.lb-rank  { font-size: 18px; width: 30px; text-align: center; }
+.lb-name  { flex: 1; font-size: 15px; }
+.lb-score { font-size: 15px; color: #ffd54f; }
+.lb-meta  { font-size: 11px; color: rgba(255,255,255,0.5); }
+
+/* ── ACHIEVEMENTS SCREEN ─────────────────────────────────────────── */
 #achievements-screen {
   background: linear-gradient(160deg, #0f0c29, #302b63, #24243e);
   overflow-y: auto;
   padding: 20px;
 }
+
+/* Individual achievement badge card */
 .ach-card {
   background: rgba(255,255,255,0.06);
   border-radius: 16px;
@@ -776,17 +872,23 @@ body {
   border: 1.5px solid rgba(255,255,255,0.1);
   transition: all 0.2s;
 }
+
+/* Gold glow when achievement is earned */
 .ach-card.unlocked {
   border-color: rgba(249,168,37,0.5);
   background: rgba(249,168,37,0.08);
   box-shadow: 0 0 20px rgba(249,168,37,0.1);
 }
+
+/* Greyed out when not yet earned */
 .ach-card.locked { opacity: 0.4; filter: grayscale(1); }
+
 .ach-card .ach-icon { font-size: 32px; margin-bottom: 6px; }
 .ach-card .ach-name { font-size: 12px; font-weight: 700; color: #fff; margin-bottom: 2px; }
 .ach-card .ach-desc { font-size: 10px; color: rgba(255,255,255,0.5); }
 
-/* ACHIEVEMENT TOAST */
+/* ── ACHIEVEMENT TOAST ───────────────────────────────────────────── */
+/* Stack of toasts that slide in from the right */
 #ach-toast {
   position: fixed;
   bottom: 24px;
@@ -797,6 +899,7 @@ body {
   gap: 10px;
   pointer-events: none;
 }
+
 .ach-toast-item {
   background: linear-gradient(135deg, #1a1a2e, #16213e);
   border: 1.5px solid rgba(249,168,37,0.5);
@@ -812,7 +915,10 @@ body {
   box-shadow: 0 4px 20px rgba(0,0,0,0.5);
   animation: toastIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
 }
+
+/* Slide out animation when toast expires */
 .ach-toast-item.out { animation: toastOut 0.3s ease-in forwards; }
+
 @keyframes toastIn {
   from { transform: translateX(120%); opacity: 0; }
   to   { transform: translateX(0);    opacity: 1; }
@@ -823,12 +929,16 @@ body {
 }
 .ach-toast-icon { font-size: 26px; }
 
-/* FARMER ANIMATIONS */
+/* ── FARMER ANIMATIONS ───────────────────────────────────────────── */
+
+/* Jump on successful catch */
 @keyframes farmerJump {
   0%   { transform: translateX(-50%) translateY(0); }
   40%  { transform: translateX(-50%) translateY(-12px); }
   100% { transform: translateX(-50%) translateY(0); }
 }
+
+/* Shake on bomb catch */
 @keyframes farmerShake {
   0%, 100% { transform: translateX(-50%) rotate(0deg); }
   20%       { transform: translateX(-50%) rotate(-10deg); }
@@ -836,12 +946,15 @@ body {
   60%       { transform: translateX(-50%) rotate(-7deg); }
   80%       { transform: translateX(-50%) rotate(7deg); }
 }
+
+/* Fruit sway while falling */
 @keyframes fruitWobble {
   from { transform: rotate(-8deg); }
   to   { transform: rotate(8deg); }
 }
 
-/* NEAR MISS FLASH */
+/* ── NEAR MISS FLASH ─────────────────────────────────────────────── */
+/* Green inner glow reward for dodging a bomb */
 @keyframes nearMissFlash {
   0%   { box-shadow: inset 0 0 0 0 rgba(0,255,0,0); }
   30%  { box-shadow: inset 0 0 60px 20px rgba(0,255,0,0.18); }
@@ -851,7 +964,7 @@ body {
   animation: nearMissFlash 0.6s ease-out forwards;
 }
 
-/* MOBILE */
+/* ── MOBILE ADJUSTMENTS ──────────────────────────────────────────── */
 @media (max-width: 480px) {
   #farmer { font-size: 40px; }
   #basket { font-size: 32px; }
