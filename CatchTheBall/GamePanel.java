@@ -5,6 +5,7 @@ import java.awt.geom.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * The core game panel.
@@ -22,12 +23,12 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
 
     // ── Game objects ──────────────────────────────────────────────────
     private Basket           basket;
-    private final List<Ball>      balls     = new ArrayList<>();
-    private final List<Particle>  particles = new ArrayList<>();
+    private final List<Ball>      balls     = new CopyOnWriteArrayList<>();
+    private final List<Particle>  particles = new CopyOnWriteArrayList<>();
     private final ScoreManager    scores    = new ScoreManager();
 
     // ── State ─────────────────────────────────────────────────────────
-    private GameScreen screen   = GameScreen.MENU;
+    private GameScreen screen   = GameScreen.NAME_ENTRY;
     private int  level          = 1;
     private int  score          = 0;
     private int  coins          = 0;
@@ -35,6 +36,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
     private int  combo          = 0;
     private int  multiplier     = 1;
     private int  consecutiveMiss= 0;
+    private int  coinsAwarded   = 0;   // Tracks 100-point thresholds for coin conversion
     private boolean newRecord   = false;
     private int  finalLevel, finalScore, finalCoins;
 
@@ -55,7 +57,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
     private float   comboFlashLife = 0;
     private String  missWarnText   = "";
     private float   missWarnLife   = 0;
-    private final List<FxText> fxTexts = new ArrayList<>();
+    private final List<FxText> fxTexts = new CopyOnWriteArrayList<>();
 
     // ── Stars background ──────────────────────────────────────────────
     private final int[]    starX, starY;
@@ -67,17 +69,21 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
     private int    shakeFrames = 0;
     private final java.util.Random rng = new java.util.Random();
 
-    // ── Leaderboard name input ────────────────────────────────────────
+    // ── Leaderboard & player name input ─────────────────────────────────
     private String nameInput = "";
+    private String playerName = "";
     private boolean nameDone = false;
 
-    // ── Menu button areas (for click detection) ───────────────────────
-    private Rectangle btnPlay, btnLeader, btnBack, btnMenuBack, btnRetry;
+    // ── Shop / housing system ───────────────────────────────────────────
+    private int houses = 0;
+    private Rectangle btnPlay, btnLeader, btnBack, btnMenuBack, btnRetry, btnInstructions, btnShop, btnShopBack, btnBuySmall, btnBuyMedium, btnBuyLarge;
+    private Rectangle hoverButton;
 
     // ─────────────────────────────────────────────────────────────────
     public GamePanel() {
-        setPreferredSize(new Dimension(800, 600));
+        setPreferredSize(new Dimension(1000, 720));
         setFocusable(true);
+        requestFocusInWindow();
         addKeyListener(this);
         addMouseMotionListener(this);
         addMouseListener(this);
@@ -88,8 +94,8 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
         starPhase = new float[120];
         starSpeed = new float[120];
         for (int i = 0; i < 120; i++) {
-            starX[i]     = rng.nextInt(800);
-            starY[i]     = rng.nextInt(600);
+            starX[i]     = rng.nextInt(1000);
+            starY[i]     = rng.nextInt(720);
             starPhase[i] = rng.nextFloat() * (float)(Math.PI * 2);
             starSpeed[i] = 0.003f + rng.nextFloat() * 0.008f;
         }
@@ -126,25 +132,29 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
             if (timerSecs <= 0) { endGame(); return; }
         }
 
-        // ── Spawn balls ───────────────────────────────────────────────
-        spawnInterval = Math.max(400, 1600 - level * 80);
-        if (now - lastSpawnMs > spawnInterval) {
-            lastSpawnMs = now;
-            spawnBall();
-        }
-
         // ── Move basket ───────────────────────────────────────────────
         if (leftHeld)  basket.moveLeft();
         if (rightHeld) basket.moveRight(getWidth());
         basket.update();
 
         // ── Update balls ──────────────────────────────────────────────
-        Iterator<Ball> bit = balls.iterator();
-        while (bit.hasNext()) {
-            Ball b = bit.next();
+        List<Ball> toRemove = new ArrayList<>();
+        for (Ball b : balls) {
             b.update();
-            if (tryCollect(b)) { bit.remove(); continue; }
-            if (b.getY() > getHeight()) { onMiss(b); bit.remove(); }
+            if (tryCollect(b)) {
+                toRemove.add(b);
+            } else if (b.getY() > getHeight()) {
+                onMiss(b);
+                toRemove.add(b);
+            }
+        }
+        balls.removeAll(toRemove);
+
+        // ── Spawn balls ───────────────────────────────────────────────
+        spawnInterval = Math.max(400, 1600 - level * 80);
+        if (now - lastSpawnMs > spawnInterval) {
+            lastSpawnMs = now;
+            spawnBall();
         }
 
         // ── Update particles & FX ─────────────────────────────────────
@@ -153,6 +163,13 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
 
         fxTexts.removeIf(f -> f.life <= 0);
         for (FxText f : fxTexts) { f.y -= 1.5; f.life -= 0.025f; }
+
+        // ── Point to coin conversion (100 points = 20 coins) ──────────
+        int earnedCoins = (score / 100) - coinsAwarded;
+        if (earnedCoins > 0) {
+            coins += earnedCoins * 20;
+            coinsAwarded += earnedCoins;
+        }
 
         // ── Decay flash timers ────────────────────────────────────────
         if (comboFlashLife > 0) comboFlashLife -= 0.022f;
@@ -211,32 +228,36 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
                 break;
 
             case STAR:
-                score  += t.getPoints() * multiplier;
-                coins  += Math.max(1, (int)(t.getPoints() * multiplier / 5.0));
+                int baseStar = t.getPoints() * multiplier;
+                int bonusStar = baseStar + (int)Math.round(baseStar * houses * 0.05);
+                score += bonusStar;
+                coins += Math.max(1, bonusStar / 5) + houses;
                 combo++;
                 updateCombo(px, py);
                 spawnParticles(px, py, new Color(255, 215, 0), 16, false);
                 spawnParticles(px, py, Color.WHITE, 6, false);
-                spawnFx(px, py, "⭐ +" + (t.getPoints() * multiplier), Color.YELLOW);
+                spawnFx(px, py, "⭐ +" + bonusStar, Color.YELLOW);
                 SoundManager.playStar();
                 consecutiveMiss = 0;
                 break;
 
             default: // NORMAL
-                score  += pts;
-                coins  += Math.max(1, pts / 5);
+                int baseNormal = pts;
+                int bonusNormal = baseNormal + (int)Math.round(baseNormal * houses * 0.05);
+                score += bonusNormal;
+                coins += Math.max(1, bonusNormal / 5) + houses;
                 combo++;
                 updateCombo(px, py);
                 spawnParticles(px, py, new Color(100, 210, 100), 8, false);
                 spawnParticles(px, py, Color.WHITE, 3, false);
-                spawnFx(px, py, "+" + pts, new Color(160, 230, 160));
+                spawnFx(px, py, "+" + bonusNormal, new Color(160, 230, 160));
                 SoundManager.playCatch();
                 consecutiveMiss = 0;
                 break;
         }
 
         // Level up check
-        if (score >= targetScore()) levelUp();
+        while (score >= targetScore()) levelUp();
     }
 
     private void onMiss(Ball b) {
@@ -271,14 +292,20 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
 
     // ── Level ─────────────────────────────────────────────────────────
 
-    private int targetScore() { return level * 100 + (level - 1) * 50; }
+    private int targetScore() {
+        switch (level) {
+            case 1: return 30;
+            case 2: return 80;
+            case 3: return 140;
+            case 4: return 220;
+            case 5: return 320;
+            default: return 320 + (level - 5) * 80;
+        }
+    }
 
     private void levelUp() {
         level++;
-        score = 0;
         combo = 0; multiplier = 1;
-        timerSecs = GAME_SECS;
-        lastTimerMs = System.currentTimeMillis();
         balls.clear();
         SoundManager.playLevelUp();
         // Burst of particles
@@ -298,7 +325,6 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
         balls.clear();
         particles.clear();
         SoundManager.playGameOver();
-        nameInput = "";
         nameDone  = false;
         screen = GameScreen.GAME_OVER;
     }
@@ -306,8 +332,15 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
     // ── Start / reset ─────────────────────────────────────────────────
 
     private void startNewGame() {
-        level  = 1; score = 0; coins = 0; timerSecs = GAME_SECS;
-        combo  = 0; multiplier = 1; consecutiveMiss = 0;
+        if (!nameInput.isBlank()) {
+            playerName = nameInput.trim();
+        }
+        if (playerName.isBlank()) {
+            playerName = "Player";
+        }
+
+        level  = 1; score = 0; coins = 0; houses = 0; timerSecs = GAME_SECS;
+        combo  = 0; multiplier = 1; consecutiveMiss = 0; coinsAwarded = 0;
         balls.clear(); particles.clear(); fxTexts.clear();
         lastTimerMs = System.currentTimeMillis();
         lastSpawnMs = 0;
@@ -345,11 +378,14 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
         }
 
         switch (screen) {
-            case MENU:        drawMenu(g2);        break;
-            case PLAYING:     drawGame(g2);        break;
-            case PAUSED:      drawGame(g2); drawPause(g2); break;
-            case GAME_OVER:   drawGameOver(g2);    break;
-            case LEADERBOARD: drawLeaderboard(g2); break;
+            case NAME_ENTRY:   drawNameEntry(g2);   break;
+            case MENU:         drawMenu(g2);        break;
+            case INSTRUCTIONS: drawInstructions(g2); break;
+            case PLAYING:      drawGame(g2);        break;
+            case SHOP:         drawShop(g2);        break;
+            case PAUSED:       drawGame(g2); drawPause(g2); break;
+            case GAME_OVER:    drawGameOver(g2);    break;
+            case LEADERBOARD:  drawLeaderboard(g2); break;
         }
     }
 
@@ -389,15 +425,17 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
         g.setFont(new Font("SansSerif", Font.PLAIN, 17));
         g.setColor(new Color(255, 255, 255, 160));
         String sub = "Move your basket · Catch the balls · Earn coins!";
-        g.drawString(sub, cx - g.getFontMetrics().stringWidth(sub) / 2, h / 3 + 36);
+        g.drawString(sub, cx - g.getFontMetrics().stringWidth(sub) / 2, h / 3 + 80);
 
         // Ball icon preview
-        drawMenuBalls(g, cx, h / 3 + 80);
+        drawMenuBalls(g, cx, h / 3 + 120);
 
         // Buttons
-        btnPlay   = drawMenuButton(g, cx - 110, h * 2 / 3, 200, 50,
+        btnPlay   = drawMenuButton(g, cx - 110, h * 2 / 3 - 20, 200, 50,
                                     new Color(249, 168, 37), "▶  Play Game", Color.WHITE);
-        btnLeader = drawMenuButton(g, cx - 110, h * 2 / 3 + 70, 200, 50,
+        btnInstructions = drawMenuButton(g, cx - 110, h * 2 / 3 + 50, 200, 50,
+                                    new Color(100, 150, 200), "📖  Instructions", Color.WHITE);
+        btnLeader = drawMenuButton(g, cx - 110, h * 2 / 3 + 120, 200, 50,
                                     new Color(50, 60, 90), "🏆  Leaderboard", Color.WHITE);
 
         // Controls hint
@@ -405,6 +443,56 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
         g.setColor(new Color(255, 255, 255, 90));
         String hint = "← → Arrow Keys or Mouse to move";
         g.drawString(hint, cx - g.getFontMetrics().stringWidth(hint) / 2, h - 24);
+    }
+
+    private void drawNameEntry(Graphics2D g) {
+        drawStarsBg(g);
+        int w = getWidth(), h = getHeight(), cx = w / 2;
+
+        // Title
+        g.setFont(new Font("SansSerif", Font.BOLD, 48));
+        String title = "Welcome!";
+        FontMetrics fm = g.getFontMetrics();
+        int tx = cx - fm.stringWidth(title) / 2;
+        GradientPaint titleGrad = new GradientPaint(
+            tx, h / 3 - 40, new Color(255, 213, 79),
+            tx + fm.stringWidth(title), h / 3 - 40, new Color(255, 111, 0)
+        );
+        g.setPaint(titleGrad);
+        g.drawString(title, tx, h / 3);
+
+        // Instructions
+        g.setFont(new Font("SansSerif", Font.PLAIN, 18));
+        g.setColor(new Color(255, 255, 255, 180));
+        String instr = "Please enter your name to start playing";
+        g.drawString(instr, cx - g.getFontMetrics().stringWidth(instr) / 2, h / 3 + 50);
+
+        // Name input box
+        g.setFont(new Font("SansSerif", Font.PLAIN, 15));
+        g.setColor(new Color(255, 255, 255, 200));
+        drawCentered(g, "Player Name", cx, h / 2 - 20);
+        int nameBoxW = 350, nameBoxH = 45;
+        int nameBoxX = cx - nameBoxW / 2;
+        int nameBoxY = h / 2;
+        g.setColor(new Color(255, 255, 255, 25));
+        g.fillRoundRect(nameBoxX, nameBoxY, nameBoxW, nameBoxH, 20, 20);
+        g.setColor(new Color(249, 168, 37, 200));
+        g.setStroke(new BasicStroke(2.0f));
+        g.drawRoundRect(nameBoxX, nameBoxY, nameBoxW, nameBoxH, 20, 20);
+        g.setFont(new Font("SansSerif", Font.PLAIN, 18));
+        String displayedName = !nameInput.isBlank() ? nameInput : "Type your name here...";
+        g.setColor(displayedName.equals("Type your name here...") ? new Color(255, 255, 255, 120) : Color.WHITE);
+        g.drawString(displayedName, nameBoxX + 20, nameBoxY + 28);
+
+        // Continue button
+        btnPlay = drawMenuButton(g, cx - 100, h / 2 + 100, 200, 50,
+                                new Color(249, 168, 37), "Continue →", Color.WHITE);
+
+        // Skip hint
+        g.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        g.setColor(new Color(255, 255, 255, 100));
+        String skip = "Press Enter to continue";
+        g.drawString(skip, cx - g.getFontMetrics().stringWidth(skip) / 2, h - 30);
     }
 
     private void drawMenuBalls(Graphics2D g, int cx, int y) {
@@ -447,6 +535,143 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
         return new Rectangle(x, y, w, h);
     }
 
+    // ── INSTRUCTIONS ──────────────────────────────────────────────────
+
+    private void drawInstructions(Graphics2D g) {
+        drawStarsBg(g);
+        int w = getWidth(), h = getHeight(), cx = w / 2;
+
+        // Title
+        g.setFont(new Font("SansSerif", Font.BOLD, 42));
+        String title = "How to Play";
+        FontMetrics fm = g.getFontMetrics();
+        int tx = cx - fm.stringWidth(title) / 2;
+        GradientPaint titleGrad = new GradientPaint(
+            tx, 80, new Color(255, 213, 79),
+            tx + fm.stringWidth(title), 80, new Color(255, 111, 0)
+        );
+        g.setPaint(titleGrad);
+        g.drawString(title, tx, 80);
+
+        // Instructions content
+        g.setFont(new Font("SansSerif", Font.PLAIN, 16));
+        g.setColor(Color.WHITE);
+        int y = 120;
+        int lineHeight = 25;
+
+        String[] instructions = {
+            "🎯 OBJECTIVE:",
+            "Catch falling balls with your basket to earn points and coins!",
+            "Avoid missing balls or you'll lose points.",
+            "",
+            "🎮 CONTROLS:",
+            "• Use ← → arrow keys or move mouse to control the basket",
+            "",
+            "⚽ BALL TYPES:",
+            "• Green ● (Normal): +10 points",
+            "• Gold ★ (Star): +50 points - rare!",
+            "• Dark ✦ (Bomb): -30 points - avoid!",
+            "• Green ✕ (Rotten): -20 points - avoid!",
+            "",
+            "⏰ GAMEPLAY:",
+            "• You have 3 minutes to catch as many balls as possible",
+            "• Difficulty increases with each level",
+            "• Build combos by catching multiple balls in a row",
+            "• Higher combos give bonus multipliers!",
+            "",
+            "🏆 SCORING:",
+            "• Points determine your final score",
+            "• Coins are earned from successful catches",
+            "• Try to beat your high score!",
+            "",
+            "🏡 SHOP:",
+            "• Open the shop while playing to buy houses with coins",
+            "• Houses give extra coins and a small score bonus"
+        };
+
+        for (String line : instructions) {
+            if (line.isEmpty()) {
+                y += lineHeight / 2; // Smaller gap for empty lines
+            } else {
+                g.drawString(line, 50, y);
+                y += lineHeight;
+            }
+        }
+
+        // Back button
+        btnBack = drawMenuButton(g, w - 160, h - 80, 140, 50,
+                                new Color(100, 100, 100), "← Back to Menu", Color.WHITE);
+    }
+
+    // ── SHOP ─────────────────────────────────────────────────────────
+
+    private void drawShop(Graphics2D g) {
+        drawStarsBg(g);
+        int w = getWidth(), h = getHeight(), cx = w / 2;
+
+        g.setFont(new Font("SansSerif", Font.BOLD, 42));
+        GradientPaint gp = new GradientPaint(cx - 140, 20, new Color(255, 213, 79), cx + 140, 20, new Color(255, 140, 0));
+        g.setPaint(gp);
+        drawCentered(g, "🏠 House Shop", cx, 70);
+
+        g.setFont(new Font("SansSerif", Font.PLAIN, 16));
+        g.setColor(new Color(255, 255, 255, 180));
+        drawCentered(g, "Spend coins to buy houses and boost your run.", cx, 110);
+        drawCentered(g, "Each house gives +1 coin per catch and +5% score bonus.", cx, 132);
+
+        int cardW = 260, cardH = 130, gap = 24;
+        int totalWidth = 3 * cardW + 2 * gap;
+        int startX = cx - totalWidth / 2;
+        int startY = 160;
+
+        drawShopCard(g, startX, startY, cardW, cardH, "Cottage", "+1 house", 50, "Small house", true);
+        drawShopCard(g, startX + cardW + gap, startY, cardW, cardH, "Villa", "+2 houses", 120, "Medium house", false);
+        drawShopCard(g, startX + 2*(cardW + gap), startY, cardW, cardH, "Mansion", "+4 houses", 220, "Luxury house", false);
+
+        btnBuySmall  = new Rectangle(startX + cardW - 120, startY + cardH - 42, 100, 30);
+        btnBuyMedium = new Rectangle(startX + cardW + gap + cardW - 120, startY + cardH - 42, 100, 30);
+        btnBuyLarge  = new Rectangle(startX + 2*(cardW + gap) + cardW - 120, startY + cardH - 42, 100, 30);
+
+        g.setFont(new Font("SansSerif", Font.BOLD, 14));
+        drawButtonLabel(g, btnBuySmall, "Buy 50", coins >= 50, hoverButton == btnBuySmall);
+        drawButtonLabel(g, btnBuyMedium, "Buy 120", coins >= 120, hoverButton == btnBuyMedium);
+        drawButtonLabel(g, btnBuyLarge, "Buy 220", coins >= 220, hoverButton == btnBuyLarge);
+
+        g.setFont(new Font("SansSerif", Font.PLAIN, 16));
+        g.setColor(Color.WHITE);
+        drawCentered(g, "Coins: " + coins, cx, startY + cardH + 90);
+        drawCentered(g, "Houses owned: " + houses, cx, startY + cardH + 114);
+
+        btnShopBack = drawMenuButton(g, cx - 100, h - 80, 200, 50, new Color(50, 60, 90), "← Back to Game", Color.WHITE);
+    }
+
+    private void drawShopCard(Graphics2D g, int x, int y, int w, int h, String title, String benefit, int cost, String subtitle, boolean first) {
+        drawCard(g, x, y, w, h);
+        g.setFont(new Font("SansSerif", Font.BOLD, 20));
+        g.setColor(Color.WHITE);
+        g.drawString(title, x + 18, y + 34);
+        g.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        g.setColor(new Color(255, 255, 255, 180));
+        g.drawString(subtitle, x + 18, y + 56);
+        g.setFont(new Font("SansSerif", Font.BOLD, 16));
+        g.setColor(new Color(249, 168, 37));
+        g.drawString(benefit, x + 18, y + 90);
+        g.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        g.setColor(new Color(255, 255, 255, 160));
+        g.drawString("Cost: " + cost + " coins", x + 18, y + 110);
+    }
+
+    private void drawButtonLabel(Graphics2D g, Rectangle rect, String label, boolean enabled, boolean hovered) {
+        Color base = enabled ? new Color(80, 110, 150) : new Color(70, 70, 80);
+        if (hovered && enabled) base = new Color(110, 150, 190);
+        g.setColor(base);
+        g.fillRoundRect(rect.x, rect.y, rect.width, rect.height, 14, 14);
+        g.setColor(new Color(255, 255, 255, enabled ? 255 : 140));
+        g.setFont(new Font("SansSerif", Font.BOLD, 13));
+        FontMetrics fm = g.getFontMetrics();
+        g.drawString(label, rect.x + (rect.width - fm.stringWidth(label)) / 2, rect.y + (rect.height + fm.getAscent() - fm.getDescent()) / 2);
+    }
+
     // ── GAME SCREEN ───────────────────────────────────────────────────
 
     private void drawGame(Graphics2D g) {
@@ -474,6 +699,9 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
             g.setColor(new Color(f.color.getRed(), f.color.getGreen(), f.color.getBlue(), alpha));
             g.drawString(f.text, (int) f.x, (int) f.y);
         }
+
+        // Shop button
+        btnShop = drawMenuButton(g, w - 140, 18, 120, 34, new Color(85, 125, 165), "🏠 Shop", Color.WHITE);
 
         // Combo flash
         if (comboFlashLife > 0) {
@@ -549,6 +777,9 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
 
         // Level
         x = drawHudPill(g, x, 8, 36, " Lv " + level + " ");
+
+        // Houses
+        x = drawHudPill(g, x, 8, 36, " 🏠 " + houses + " ");
 
         // Score / target
         x = drawHudPill(g, x, 8, 36, " Score: " + score + " / " + targetScore() + " ");
@@ -676,8 +907,8 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
 
         g.setFont(new Font("SansSerif", Font.BOLD, 16));
         g.setColor(Color.WHITE);
-        String displayed = nameInput.isEmpty() ? "Type your name..." : nameInput;
-        Color niColor = nameInput.isEmpty() ? new Color(255, 255, 255, 80) : Color.WHITE;
+        String displayed = !nameInput.isBlank() ? nameInput : (playerName.isBlank() ? "Type your name..." : playerName);
+        Color niColor = displayed.equals("Type your name...") ? new Color(255, 255, 255, 80) : Color.WHITE;
         g.setColor(niColor);
         drawCentered(g, displayed, cx, niY + 8 + niH / 2 + 6);
 
@@ -787,7 +1018,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
 
     @Override public void keyTyped(KeyEvent e) {
         char c = e.getKeyChar();
-        if (screen == GameScreen.GAME_OVER) {
+        if (screen == GameScreen.NAME_ENTRY || screen == GameScreen.GAME_OVER || screen == GameScreen.MENU) {
             if (Character.isLetterOrDigit(c) || c == ' ') {
                 if (nameInput.length() < 16) nameInput += c;
             } else if (c == '\b' && nameInput.length() > 0) {
@@ -798,7 +1029,15 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
 
     @Override public void keyPressed(KeyEvent e) {
         int code = e.getKeyCode();
-        if (screen == GameScreen.PLAYING) {
+        if (screen == GameScreen.NAME_ENTRY) {
+            if (code == KeyEvent.VK_ENTER) {
+                if (!nameInput.trim().isEmpty()) {
+                    playerName = nameInput.trim();
+                }
+                screen = GameScreen.MENU;
+                return;
+            }
+        } else if (screen == GameScreen.PLAYING) {
             if (code == KeyEvent.VK_LEFT  || code == KeyEvent.VK_A) leftHeld  = true;
             if (code == KeyEvent.VK_RIGHT || code == KeyEvent.VK_D) rightHeld = true;
             if (code == KeyEvent.VK_P)     { screen = GameScreen.PAUSED; }
@@ -822,17 +1061,46 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
 
     @Override public void mouseMoved(MouseEvent e) {
         mouseX = e.getX();
-        if (screen == GameScreen.PLAYING && basket != null)
+        if (screen == GameScreen.PLAYING && basket != null) {
             basket.setTargetX(mouseX, getWidth());
+        }
+        if (screen == GameScreen.SHOP) {
+            hoverButton = null;
+            if (btnBuySmall != null && btnBuySmall.contains(e.getX(), e.getY())) hoverButton = btnBuySmall;
+            else if (btnBuyMedium != null && btnBuyMedium.contains(e.getX(), e.getY())) hoverButton = btnBuyMedium;
+            else if (btnBuyLarge != null && btnBuyLarge.contains(e.getX(), e.getY())) hoverButton = btnBuyLarge;
+            else if (btnShopBack != null && btnShopBack.contains(e.getX(), e.getY())) hoverButton = btnShopBack;
+        }
     }
 
     @Override public void mouseDragged(MouseEvent e) { mouseMoved(e); }
 
     @Override public void mouseClicked(MouseEvent e) {
         int mx = e.getX(), my = e.getY();
-        if (screen == GameScreen.MENU) {
+        if (screen == GameScreen.NAME_ENTRY) {
+            if (btnPlay != null && btnPlay.contains(mx, my)) { 
+                if (!nameInput.trim().isEmpty()) {
+                    playerName = nameInput.trim();
+                }
+                screen = GameScreen.MENU; 
+                return; 
+            }
+        } else if (screen == GameScreen.MENU) {
             if (btnPlay   != null && btnPlay.contains(mx, my))   { startNewGame(); return; }
+            if (btnInstructions != null && btnInstructions.contains(mx, my)) { screen = GameScreen.INSTRUCTIONS; return; }
             if (btnLeader != null && btnLeader.contains(mx, my)) { screen = GameScreen.LEADERBOARD; }
+        } else if (screen == GameScreen.PLAYING) {
+            if (btnShop != null && btnShop.contains(mx, my)) { screen = GameScreen.SHOP; return; }
+        } else if (screen == GameScreen.INSTRUCTIONS) {
+            if (btnBack != null && btnBack.contains(mx, my)) { screen = GameScreen.MENU; }
+        } else if (screen == GameScreen.SHOP) {
+            if (btnBuySmall != null && btnBuySmall.contains(mx, my) && coins >= 50) {
+                coins -= 50; houses += 1; return; }
+            if (btnBuyMedium != null && btnBuyMedium.contains(mx, my) && coins >= 120) {
+                coins -= 120; houses += 2; return; }
+            if (btnBuyLarge != null && btnBuyLarge.contains(mx, my) && coins >= 220) {
+                coins -= 220; houses += 4; return; }
+            if (btnShopBack != null && btnShopBack.contains(mx, my)) { screen = GameScreen.PLAYING; return; }
         } else if (screen == GameScreen.GAME_OVER) {
             if (btnRetry  != null && btnRetry.contains(mx, my))  { submitScoreAndRetry(); return; }
             if (btnBack   != null && btnBack.contains(mx, my))   { screen = GameScreen.MENU; return; }
@@ -843,7 +1111,8 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
     }
 
     private void submitScoreAndRetry() {
-        String name = nameInput.isBlank() ? "Player" : nameInput.trim();
+        String name = !nameInput.isBlank() ? nameInput.trim() : (playerName.isBlank() ? "Player" : playerName);
+        playerName = name;
         scores.addScore(name, finalScore, finalLevel, finalCoins);
         startNewGame();
     }

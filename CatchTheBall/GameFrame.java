@@ -11,11 +11,12 @@ public class GameFrame extends JFrame {
     public GameFrame() {
         setTitle("Catch the Ball");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setResizable(false);
+        setResizable(true);
 
         GamePanel panel = new GamePanel();
         add(panel);
         pack();                          // Size frame to panel's preferred size
+        setSize(1000, 720);
         setLocationRelativeTo(null);     // Centre on screen
 
         // Start game loop on a daemon thread

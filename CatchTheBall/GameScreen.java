@@ -5,8 +5,11 @@
  * Demonstrates: Enum used as a state machine (OOP principle)
  */
 public enum GameScreen {
+    NAME_ENTRY,
     MENU,
+    INSTRUCTIONS,
     PLAYING,
+    SHOP,
     PAUSED,
     GAME_OVER,
     LEADERBOARD
