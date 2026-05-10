@@ -174,7 +174,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
         // ── Decay flash timers ────────────────────────────────────────
         if (comboFlashLife > 0) comboFlashLife -= 0.022f;
         if (missWarnLife  > 0) missWarnLife  -= 0.025f;
-        if (shakeFrames   > 0) shakeFrames--;
+        if (shakeFrames   > 0) shakeFrames--
     }
 
     // ── Ball spawn ────────────────────────────────────────────────────
