@@ -614,15 +614,20 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
         g.setPaint(gp);
         drawCentered(g, "🏠 House Shop", cx, 70);
 
+        // Display current coins prominently
+        g.setFont(new Font("SansSerif", Font.BOLD, 24));
+        g.setColor(new Color(255, 215, 0));
+        drawCentered(g, "💰 " + coins + " Coins", cx, 110);
+
         g.setFont(new Font("SansSerif", Font.PLAIN, 16));
         g.setColor(new Color(255, 255, 255, 180));
-        drawCentered(g, "Spend coins to buy houses and boost your run.", cx, 110);
-        drawCentered(g, "Each house gives +1 coin per catch and +5% score bonus.", cx, 132);
+        drawCentered(g, "Spend coins to buy houses and boost your run.", cx, 140);
+        drawCentered(g, "Each house gives +1 coin per catch and +5% score bonus.", cx, 162);
 
         int cardW = 260, cardH = 130, gap = 24;
         int totalWidth = 3 * cardW + 2 * gap;
         int startX = cx - totalWidth / 2;
-        int startY = 160;
+        int startY = 190;
 
         drawShopCard(g, startX, startY, cardW, cardH, "Cottage", "+1 house", 50, "Small house", true);
         drawShopCard(g, startX + cardW + gap, startY, cardW, cardH, "Villa", "+2 houses", 120, "Medium house", false);
@@ -639,8 +644,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
 
         g.setFont(new Font("SansSerif", Font.PLAIN, 16));
         g.setColor(Color.WHITE);
-        drawCentered(g, "Coins: " + coins, cx, startY + cardH + 90);
-        drawCentered(g, "Houses owned: " + houses, cx, startY + cardH + 114);
+        drawCentered(g, "Houses owned: " + houses, cx, startY + cardH + 90);
 
         btnShopBack = drawMenuButton(g, cx - 100, h - 80, 200, 50, new Color(50, 60, 90), "← Back to Game", Color.WHITE);
     }
