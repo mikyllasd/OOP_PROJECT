@@ -433,9 +433,9 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
         // Sky gradient per theme (every 2 levels)
         Color skyTop, skyBot;
         switch (theme % 4) {
-            case 0: // Day
-                skyTop = new Color(72, 158, 255);
-                skyBot = new Color(178, 224, 255);
+            case 0: // Day - light blue to pale blue
+                skyTop = new Color(135, 206, 250);
+                skyBot = new Color(173, 216, 230);
                 break;
             case 1: // Evening
                 skyTop = new Color(255, 160, 40);
@@ -455,6 +455,13 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
         GradientPaint sky = new GradientPaint(0, 0, skyTop, 0, H - 80, skyBot);
         g.setPaint(sky);
         g.fillRect(0, 0, W, H);
+        g.setPaint(null);
+
+        // Mountains in the distance (parallax layer)
+        drawMountains(g, theme);
+
+        // Random trees for variety
+        drawRandomTrees(g, theme);
 
         // Stars at night
         if (theme % 4 == 2) {
@@ -684,9 +691,10 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
                 break;
         }
 
-        // Tree 1
+        // Trees
+        // Tree 1 (large)
         g.setColor(trunkColor);
-        g.fillRect(80, baseY - 70, 18, 64);
+        g.fillRect(80, baseY - 70, 18, 70);
         g.setColor(leafColor);
         g.fillOval(55, baseY - 130, 75, 80);
         g.fillOval(65, baseY - 150, 55, 90);
@@ -696,9 +704,9 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
             g.fillOval(68, baseY - 146, 34, 30);
         }
 
-        // Tree 2
+        // Tree 2 (medium)
         g.setColor(trunkColor);
-        g.fillRect(260, baseY - 60, 14, 50);
+        g.fillRect(260, baseY - 60, 14, 60);
         g.setColor(leafColor);
         g.fillOval(240, baseY - 110, 60, 56);
         g.fillOval(250, baseY - 130, 46, 70);
@@ -707,17 +715,50 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
             g.fillOval(244, baseY - 106, 36, 22);
         }
 
+        // Tree 3 (small)
+        g.setColor(trunkColor);
+        g.fillRect(150, baseY - 50, 12, 50);
+        g.setColor(leafColor);
+        g.fillOval(130, baseY - 90, 50, 45);
+        if (theme % 4 == 3) {
+            g.setColor(new Color(255, 255, 255, 200));
+            g.fillOval(135, baseY - 85, 25, 15);
+        }
+
+        // Tree 4 (tall)
+        g.setColor(trunkColor);
+        g.fillRect(350, baseY - 80, 16, 80);
+        g.setColor(leafColor);
+        g.fillOval(325, baseY - 140, 65, 75);
+        g.fillOval(335, baseY - 160, 45, 85);
+        if (theme % 4 == 3) {
+            g.setColor(new Color(255, 255, 255, 215));
+            g.fillOval(330, baseY - 135, 35, 25);
+        }
+
+        // Tree 5 (bushy)
+        g.setColor(trunkColor);
+        g.fillRect(500, baseY - 55, 13, 55);
+        g.setColor(leafColor);
+        g.fillOval(480, baseY - 100, 55, 50);
+        g.fillOval(485, baseY - 115, 45, 60);
+        if (theme % 4 == 3) {
+            g.setColor(new Color(255, 255, 255, 205));
+            g.fillOval(485, baseY - 95, 30, 20);
+        }
+
+        // Houses
         // House 1
         g.setColor(houseColor);
-        g.fillRect(440, baseY - 90, 90, 60);
+        g.fillRect(440, baseY - 90, 90, 90);
         g.setColor(roofColor);
         int[] xPoints1 = {430, 485, 540};
         int[] yPoints1 = {baseY - 90, baseY - 130, baseY - 90};
         g.fillPolygon(xPoints1, yPoints1, 3);
         g.setColor(trimColor);
-        g.fillRect(475, baseY - 50, 20, 30);
+        g.fillRect(475, baseY - 50, 20, 40);
         g.setColor(new Color(120, 70, 40));
-        g.fillRect(470, baseY - 38, 10, 18);
+        g.fillRect(470, baseY - 38, 10, 28);
         if (theme % 4 == 3) {
             g.setColor(new Color(255, 255, 255, 220));
             g.fillRect(462, baseY - 132, 30, 14);
@@ -726,16 +767,78 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
 
         // House 2
         g.setColor(houseColor.darker());
-        g.fillRect(610, baseY - 80, 70, 50);
+        g.fillRect(610, baseY - 80, 70, 80);
         g.setColor(roofColor.darker());
         int[] xPoints2 = {600, 645, 690};
         int[] yPoints2 = {baseY - 80, baseY - 110, baseY - 80};
         g.fillPolygon(xPoints2, yPoints2, 3);
         g.setColor(trimColor);
-        g.fillRect(640, baseY - 40, 16, 24);
+        g.fillRect(640, baseY - 40, 16, 40);
         if (theme % 4 == 3) {
             g.setColor(new Color(255, 255, 255, 210));
             g.fillArc(607, baseY - 83, 18, 12, 0, 180);
+        }
+
+        // House 3 (small cottage)
+        g.setColor(houseColor.brighter());
+        g.fillRect(720, baseY - 70, 60, 70);
+        g.setColor(roofColor);
+        int[] xPoints3 = {710, 750, 790};
+        int[] yPoints3 = {baseY - 70, baseY - 100, baseY - 70};
+        g.fillPolygon(xPoints3, yPoints3, 3);
+        g.setColor(trimColor);
+        g.fillRect(745, baseY - 35, 15, 35);
+        if (theme % 4 == 3) {
+            g.setColor(new Color(255, 255, 255, 200));
+            g.fillRect(735, baseY - 102, 20, 10);
+        }
+    }
+
+    private void drawMountains(Graphics2D g, int theme) {
+        // Simple mountain silhouettes for parallax effect
+        g.setColor(new Color(80, 80, 80, 120)); // distant gray
+        // Mountain 1
+        int[] x1 = {0, 120, 240};
+        int[] y1 = {H - 80, H - 150, H - 80};
+        g.fillPolygon(x1, y1, 3);
+        // Mountain 2
+        int[] x2 = {180, 300, 420};
+        int[] y2 = {H - 80, H - 130, H - 80};
+        g.fillPolygon(x2, y2, 3);
+        // Mountain 3
+        int[] x3 = {360, 480, 600};
+        int[] y3 = {H - 80, H - 140, H - 80};
+        g.fillPolygon(x3, y3, 3);
+        // Mountain 4
+        int[] x4 = {540, 660, 780};
+        int[] y4 = {H - 80, H - 160, H - 80};
+        g.fillPolygon(x4, y4, 3);
+        // Mountain 5
+        int[] x5 = {720, 840, 960};
+        int[] y5 = {H - 80, H - 120, H - 80};
+        g.fillPolygon(x5, y5, 3);
+    }
+
+    private void drawRandomTrees(Graphics2D g, int theme) {
+        Random rand = new Random(12345); // fixed seed for consistent generation
+        Color treeColor = new Color(34, 139, 34);
+        if (theme % 4 == 1) treeColor = new Color(235, 120, 45);
+        else if (theme % 4 == 2) treeColor = new Color(80, 115, 145);
+        else if (theme % 4 == 3) treeColor = new Color(180, 230, 255);
+        g.setColor(treeColor);
+
+        int treeSpacing = 40; // spacing to avoid big gaps
+        for (int i = 0; i < ARENA_W; i += treeSpacing) {
+            int x = i + rand.nextInt(treeSpacing / 2); // vary position
+            int y = H - 120 + rand.nextInt(10); // near ground
+            int size = 15 + rand.nextInt(10); // vary size
+            if (rand.nextBoolean()) { // Pine tree (triangular)
+                int[] px = {x, x + size / 2, x + size};
+                int[] py = {y, y - size, y};
+                g.fillPolygon(px, py, 3);
+            } else { // Oak tree (round)
+                g.fillOval(x, y - size, size, size);
+            }
         }
     }
 
@@ -847,7 +950,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
         String secs = String.format("%02d", timeLeft % 60);
         drawSidebarItem(g, sx + 12, py, "TIME", mins + ":" + secs, timerColor, titleFont, valFont); py += 62;
 
-        drawSidebarItem(g, sx + 12, py, "COINS 🪙", "" + playerData.getTotalCoins(), new Color(255, 215, 50), titleFont, new Font("Arial", Font.BOLD, 18)); py += 52;
+        drawSidebarItem(g, sx + 12, py, "COINS 💰", "" + playerData.getTotalCoins(), new Color(255, 215, 50), titleFont, new Font("Arial", Font.BOLD, 18)); py += 52;
 
         if (combo > 0) {
             Color cc = combo >= 8 ? new Color(255, 100, 255) : combo >= 5 ? new Color(255, 180, 50) : new Color(100, 255, 200);
@@ -942,7 +1045,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
 
         // Title drop shadow
         g.setFont(new Font("Arial Black", Font.BOLD, 52));
-        String title = "🌾 Catch the Ball!";
+        String title = "🌾 Catch the Ball! 🚜";
         FontMetrics fm = g.getFontMetrics();
         int tx = (W - fm.stringWidth(title)) / 2;
         g.setColor(new Color(20, 60, 10, 180));

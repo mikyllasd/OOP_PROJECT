@@ -1,8 +1,8 @@
-coins=2658
+coins=2730
 farmStage=6
-equippedSkin=FARMER_FEMALE
-equippedBasket=WOVEN
+equippedSkin=FARMER_MALE
+equippedBasket=METAL
 ownedSkins=FARMER_MALE
-ownedBaskets=WOVEN
+ownedBaskets=WOVEN,METAL
 achievements=first_harvest,on_fire,rich_farmer,speed_farmer
 farmerName=

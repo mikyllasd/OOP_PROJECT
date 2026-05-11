@@ -193,6 +193,60 @@ public enum BasketSkin {
         }
     },
 
+    STRAW_BASKET("Straw Basket", 250) {
+        @Override
+        public void draw(Graphics2D g, int x, int y, int w, int h) {
+            GradientPaint straw = new GradientPaint(x, y, new Color(0xE5C564), x + w, y + h, new Color(0xC8942B));
+            g.setPaint(straw);
+            g.fillRoundRect(x, y, w, h, 10, 10);
+            g.setPaint(null);
+            g.setColor(new Color(0xA86A1B));
+            g.setStroke(new BasicStroke(1.2f));
+            for (int line = 0; line < 4; line++) {
+                int yy = y + 8 + line * (h - 16) / 3;
+                g.drawLine(x + 6, yy, x + w - 6, yy);
+            }
+            for (int col = 0; col < 4; col++) {
+                int xx = x + 10 + col * (w - 20) / 3;
+                g.drawLine(xx, y + 10, xx, y + h - 10);
+            }
+            g.setColor(new Color(0x8B5A1A));
+            g.fillRoundRect(x + 10, y - 8, w - 20, 12, 8, 8);
+            g.setColor(new Color(0x6B3A10));
+            g.drawRoundRect(x + 10, y - 8, w - 20, 12, 8, 8);
+            g.setStroke(new BasicStroke(1f));
+        }
+    },
+
+    FLOWER_BASKET("Flower Basket", 400) {
+        @Override
+        public void draw(Graphics2D g, int x, int y, int w, int h) {
+            Color base = new Color(0xB0703A);
+            GradientPaint basketPaint = new GradientPaint(x, y, base.brighter(), x + w, y + h, base.darker());
+            g.setPaint(basketPaint);
+            g.fillRoundRect(x, y, w, h, 10, 10);
+            g.setPaint(null);
+            g.setColor(new Color(0x8B521F));
+            g.setStroke(new BasicStroke(1.2f));
+            for (int row = 0; row < 3; row++) {
+                int yy = y + 10 + row * (h - 20) / 2;
+                g.drawLine(x + 8, yy, x + w - 8, yy);
+            }
+            g.setColor(new Color(0xEDC24B));
+            g.fillOval(x + w / 2 - 10, y + 18, 20, 20);
+            g.setColor(new Color(0xE95A65));
+            for (int petal = 0; petal < 6; petal++) {
+                double angle = Math.toRadians(petal * 60);
+                int px = x + w / 2 + (int)(Math.cos(angle) * 18);
+                int py = y + 28 + (int)(Math.sin(angle) * 10);
+                g.fillOval(px - 6, py - 6, 12, 12);
+            }
+            g.setColor(new Color(0x8B521F));
+            g.drawRoundRect(x, y, w, h, 10, 10);
+            g.setStroke(new BasicStroke(1f));
+        }
+    },
+
     DIAMOND("Diamond Basket", 500) {
         @Override
         public void draw(Graphics2D g, int x, int y, int w, int h) {
