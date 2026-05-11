@@ -7,8 +7,9 @@ import java.util.List;
 
 public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMotionListener, MouseListener {
 
-    private static final int W = 1100, H = 760;
-    private static final int ARENA_W = 800, SIDEBAR_W = 300;
+    // Screen dimensions (responsive - updated on resize)
+    private int W = 900, H = 650;
+    private int ARENA_W = 650, SIDEBAR_W = 250;
 
     private Thread gameThread;
     private volatile boolean running;
@@ -111,6 +112,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
 
     public GamePanel() {
         setPreferredSize(new Dimension(W, H));
+        setBackground(new Color(30, 60, 20));
         setBackground(Color.BLACK);
         setFocusable(true);
         addKeyListener(this);
@@ -151,6 +153,23 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
     }
 
     // ── game loop ──────────────────────────────────────────────────────────────
+    public void onResize(int newW, int newH) {
+        W = Math.max(800, newW);
+        H = Math.max(600, newH);
+        SIDEBAR_W = Math.max(180, W / 4);
+        ARENA_W = W - SIDEBAR_W;
+
+        // Reposition basket and character if in game
+        if (basket != null) {
+            if (basket.getX() > ARENA_W - basket.getWidth())
+                basket.setTargetX(ARENA_W / 2f);
+        }
+        if (character != null) {
+            character.x = ARENA_W / 2f - 25;
+            character.y = H - 160;
+        }
+    }
+
 
     public void startGameLoop() {
         running    = true;
@@ -389,9 +408,9 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
         magnetTimer = 0; doubleTimer = 0; screenShakeTimer = 0;
         balls = new ArrayList<>(); powerUps = new ArrayList<>(); particles = new ArrayList<>();
         spawnTimer = 60; powerUpSpawnTimer = 300;
-        basket    = new Basket(ARENA_W / 2f - 40, H - 110, playerData.getEquippedBasket());
+        basket = new Basket(ARENA_W / 2f - 40, H - 120, playerData.getEquippedBasket());
         String name = character != null ? character.getFarmerName() : "Farmer";
-        character = new Character(ARENA_W / 2f - 25, H - 160, playerData.getEquippedSkin(), name);
+        character = new Character(ARENA_W / 2f - 25, H - 175, playerData.getEquippedSkin(), name);
         farm      = new FarmProgression(playerData.getFarmStage());
         screen    = GameScreen.GAME;
     }
