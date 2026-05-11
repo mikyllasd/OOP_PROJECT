@@ -1,6 +1,6 @@
-coins=2906
-farmStage=5
-equippedSkin=FARMER_MALE
+coins=2658
+farmStage=6
+equippedSkin=FARMER_FEMALE
 equippedBasket=WOVEN
 ownedSkins=FARMER_MALE
 ownedBaskets=WOVEN
