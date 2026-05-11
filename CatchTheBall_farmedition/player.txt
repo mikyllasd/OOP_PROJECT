@@ -1,4 +1,4 @@
-coins=36
+coins=1126
 farmStage=5
 equippedSkin=FARMER_MALE
 equippedBasket=WOVEN

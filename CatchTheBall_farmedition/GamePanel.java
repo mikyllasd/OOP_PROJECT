@@ -52,7 +52,9 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
     private static final SkinType[] STARTER_SKINS = {SkinType.FARMER_MALE, SkinType.FARMER_FEMALE, SkinType.FARM_KID};
 
     private Rectangle[] menuButtons;
+    private Rectangle[] gameButtons;
     private int hoveredButton = -1;
+    private int gameHoveredButton = -1;
 
     private int shopTab = 0;
     private int selectedShopItem = -1;
@@ -203,6 +205,9 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
             if (timeLeft == 0) endGame();
         }
         basket.update();
+        float targetCharX = basket.getX() + basket.getShakeOffset() + basket.getWidth() / 2f - character.getWidth() / 2f;
+        float targetCharY = basket.getY() - character.getHeight() + 10;
+        character.setTarget(targetCharX, targetCharY);
         character.update();
         character.setActive(true);
 
@@ -430,13 +435,13 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
 
         GradientPaint sky = new GradientPaint(0, 0, skyTop, 0, H - 80, skyBot);
         g.setPaint(sky);
-        g.fillRect(0, 0, ARENA_W, H);
+        g.fillRect(0, 0, W, H);
 
         // Stars at night (twinkle via sine)
         if (lv >= 8) {
             Random sr = new Random(42);
             for (int i = 0; i < 60; i++) {
-                int sx = sr.nextInt(ARENA_W);
+                int sx = sr.nextInt(W);
                 int sy = sr.nextInt(H / 2);
                 float brightness = 0.5f + 0.5f * (float)Math.sin(starTwinkle[i]);
                 int alpha = (int)(brightness * 220);
@@ -454,15 +459,13 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
 
         // Sun or Moon
         if (lv <= 6) {
-            // Sun with glow
-            int sunX = ARENA_W - 80, sunY = 60;
+            int sunX = W - 80, sunY = 60;
             g.setColor(new Color(255, 240, 120, 40));
             g.fillOval(sunX - 18, sunY - 18, 56, 56);
             g.setColor(new Color(255, 235, 80, 80));
             g.fillOval(sunX - 10, sunY - 10, 40, 40);
             g.setColor(new Color(255, 230, 60));
             g.fillOval(sunX, sunY, 22, 22);
-            // Sun rays
             g.setColor(new Color(255, 230, 60, 130));
             g.setStroke(new BasicStroke(1.5f));
             for (int a = 0; a < 8; a++) {
@@ -475,66 +478,39 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
             }
             g.setStroke(new BasicStroke(1f));
         } else if (lv >= 8) {
-            // Moon
-            int mx2 = ARENA_W - 80, my2 = 55;
+            int mx2 = W - 80, my2 = 55;
             g.setColor(new Color(220, 230, 255, 30));
             g.fillOval(mx2 - 12, my2 - 12, 48, 48);
             g.setColor(new Color(230, 238, 255));
             g.fillOval(mx2, my2, 26, 26);
             g.setColor(new Color(72, 90, 140));
-            g.fillOval(mx2 + 6, my2 - 4, 20, 20); // crescent shadow
+            g.fillOval(mx2 + 6, my2 - 4, 20, 20);
         }
 
-        // Clouds (layered with subtle colour tint)
         for (Cloud c : clouds) {
             Color cloudColor;
             if      (lv <= 3) cloudColor = new Color(255, 255, 255, (int)(c.alpha * 210));
             else if (lv <= 6) cloudColor = new Color(255, 210, 150, (int)(c.alpha * 180));
             else              cloudColor = new Color(180, 120, 100, (int)(c.alpha * 140));
             g.setColor(cloudColor);
-            g.fillOval((int)c.x,                       (int)c.y,                      c.w,            c.h);
-            g.fillOval((int)(c.x + c.w * 0.18),        (int)(c.y - c.h * 0.32),       (int)(c.w * 0.68), (int)(c.h * 0.95));
-            g.fillOval((int)(c.x + c.w * 0.52),        (int)(c.y - c.h * 0.08),       (int)(c.w * 0.48), (int)(c.h * 0.75));
+            g.fillOval((int)c.x, (int)c.y, c.w, c.h);
+            g.fillOval((int)(c.x + c.w * 0.18), (int)(c.y - c.h * 0.32), (int)(c.w * 0.68), (int)(c.h * 0.95));
+            g.fillOval((int)(c.x + c.w * 0.52), (int)(c.y - c.h * 0.08), (int)(c.w * 0.48), (int)(c.h * 0.75));
         }
 
-        // Fireflies at dusk/night
         if (lv >= 5) {
             for (int i = 0; i < fireflyX.length; i++) {
                 float glow = 0.4f + 0.6f * (float)Math.sin(fireflyPhase[i] * 1.8);
                 int alpha  = (int)(glow * 200);
-                // outer glow
                 g.setColor(new Color(180, 255, 120, alpha / 4));
                 g.fillOval((int)fireflyX[i] - 5, (int)fireflyY[i] - 5, 10, 10);
-                // bright core
                 g.setColor(new Color(200, 255, 100, alpha));
                 g.fillOval((int)fireflyX[i] - 2, (int)fireflyY[i] - 2, 4, 4);
             }
         }
 
-        // Ground: rich layered grass
-        // Back layer (darker)
-        GradientPaint grassBack = new GradientPaint(0, H - 80, new Color(45, 115, 35), 0, H, new Color(28, 80, 20));
-        g.setPaint(grassBack);
-        g.fillRect(0, H - 80, ARENA_W, 80);
+        drawFullGrass(g, W);
 
-        // Mid tufts
-        g.setPaint(null);
-        g.setColor(new Color(60, 145, 48));
-        for (int i = 0; i < ARENA_W; i += 18) {
-            int gy = H - 80;
-            g.fillArc(i - 2, gy - 6, 16, 14, 0, 180);
-        }
-        // Front highlights
-        g.setColor(new Color(90, 185, 65, 140));
-        for (int i = 5; i < ARENA_W; i += 24) {
-            g.fillArc(i, H - 82, 10, 10, 0, 180);
-        }
-
-        // Dirt path
-        g.setColor(new Color(160, 120, 70, 60));
-        g.fillRect(ARENA_W / 2 - 40, H - 80, 80, 80);
-
-        // Rain at storm levels
         if (lv >= 7) {
             g.setStroke(new BasicStroke(1.2f));
             for (RainDrop r : rainDrops) {
@@ -544,19 +520,117 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
             }
             g.setStroke(new BasicStroke(1f));
 
-            // Lightning flash (rare)
             if (tickCount % 240 == 0) {
                 g.setColor(new Color(255, 255, 255, 60));
-                g.fillRect(0, 0, ARENA_W, H);
+                g.fillRect(0, 0, W, H);
             }
         }
 
-        // Horizon shimmer (heat haze at dusk)
         if (lv >= 4 && lv <= 6) {
             float shimmer = 0.3f + 0.2f * (float)Math.sin(tickCount * 0.07);
             g.setColor(new Color(255, 180, 60, (int)(shimmer * 40)));
-            g.fillRect(0, H - 100, ARENA_W, 20);
+            g.fillRect(0, H - 100, W, 20);
         }
+    }
+
+    private void drawSkyBackgroundFull(Graphics2D g, int lv) {
+        Color skyTop, skyBot;
+        if      (lv <= 3) { skyTop = new Color(72, 158, 255);  skyBot = new Color(178, 224, 255); }
+        else if (lv <= 6) { skyTop = new Color(255, 160, 40);  skyBot = new Color(255, 220, 120); }
+        else if (lv <= 9) { skyTop = new Color(200, 60,  30);  skyBot = new Color(255, 140,  60); }
+        else              { skyTop = new Color(8,   12,  45);  skyBot = new Color(30,  42,  80); }
+
+        GradientPaint sky = new GradientPaint(0, 0, skyTop, 0, H - 80, skyBot);
+        g.setPaint(sky);
+        g.fillRect(0, 0, W, H);
+        g.setPaint(null);
+
+        if (lv >= 8) {
+            Random sr = new Random(42);
+            for (int i = 0; i < 60; i++) {
+                int sx = sr.nextInt(W);
+                int sy = sr.nextInt(H / 2);
+                float brightness = 0.5f + 0.5f * (float)Math.sin(starTwinkle[i]);
+                int alpha = (int)(brightness * 220);
+                g.setColor(new Color(255, 255, 210, alpha));
+                int ss = 1 + (i % 3 == 0 ? 1 : 0);
+                g.fillOval(sx, sy, ss, ss);
+                if (i % 8 == 0 && brightness > 0.8f) {
+                    g.setColor(new Color(255, 255, 200, 80));
+                    g.drawLine(sx - 3, sy, sx + 3, sy);
+                    g.drawLine(sx, sy - 3, sx, sy + 3);
+                }
+            }
+        }
+
+        if (lv <= 6) {
+            int sunX = W - 80, sunY = 60;
+            g.setColor(new Color(255, 240, 120, 40));
+            g.fillOval(sunX - 18, sunY - 18, 56, 56);
+            g.setColor(new Color(255, 235, 80, 80));
+            g.fillOval(sunX - 10, sunY - 10, 40, 40);
+            g.setColor(new Color(255, 230, 60));
+            g.fillOval(sunX, sunY, 22, 22);
+            g.setColor(new Color(255, 230, 60, 130));
+            g.setStroke(new BasicStroke(1.5f));
+            for (int a = 0; a < 8; a++) {
+                double angle = Math.toRadians(a * 45 + (tickCount * 0.3));
+                int x1 = (int)(sunX + 11 + Math.cos(angle) * 16);
+                int y1 = (int)(sunY + 11 + Math.sin(angle) * 16);
+                int x2 = (int)(sunX + 11 + Math.cos(angle) * 22);
+                int y2 = (int)(sunY + 11 + Math.sin(angle) * 22);
+                g.drawLine(x1, y1, x2, y2);
+            }
+            g.setStroke(new BasicStroke(1f));
+        } else if (lv >= 8) {
+            int mx2 = W - 80, my2 = 55;
+            g.setColor(new Color(220, 230, 255, 30));
+            g.fillOval(mx2 - 12, my2 - 12, 48, 48);
+            g.setColor(new Color(230, 238, 255));
+            g.fillOval(mx2, my2, 26, 26);
+            g.setColor(new Color(72, 90, 140));
+            g.fillOval(mx2 + 6, my2 - 4, 20, 20);
+        }
+
+        drawFullGrass(g, W);
+    }
+
+    private void drawFullGrass(Graphics2D g, int width) {
+        GradientPaint grassBack = new GradientPaint(0, H - 100, new Color(45, 115, 35), 0, H, new Color(28, 80, 20));
+        g.setPaint(grassBack);
+        g.fillRect(0, H - 100, width, 100);
+        g.setPaint(null);
+
+        g.setColor(new Color(60, 145, 48));
+        for (int i = 0; i < width; i += 18) {
+            g.fillArc(i - 2, H - 106, 16, 14, 0, 180);
+        }
+        g.setColor(new Color(90, 185, 65, 140));
+        for (int i = 5; i < width; i += 24) {
+            g.fillArc(i, H - 108, 10, 10, 0, 180);
+        }
+
+        g.setColor(new Color(255, 255, 255, 14));
+        for (int i = 12; i < width; i += 36) {
+            g.fillOval(i, H - 86 - (i % 72 == 0 ? 2 : 0), 4, 4);
+        }
+    }
+
+    private void drawSidebarActionButton(Graphics2D g, Rectangle rect, String label, boolean hovered) {
+        Color bg = hovered ? new Color(100, 190, 70) : new Color(70, 130, 50);
+        Color border = hovered ? new Color(190, 245, 110) : new Color(120, 180, 80);
+        GradientPaint btnGrad = new GradientPaint(rect.x, rect.y, bg.brighter(), rect.x, rect.y + rect.height, bg.darker());
+        g.setPaint(btnGrad);
+        g.fillRoundRect(rect.x, rect.y, rect.width, rect.height, 12, 12);
+        g.setPaint(null);
+        g.setColor(border);
+        g.setStroke(new BasicStroke(2f));
+        g.drawRoundRect(rect.x, rect.y, rect.width, rect.height, 12, 12);
+        g.setStroke(new BasicStroke(1f));
+        g.setFont(new Font("Arial", Font.BOLD, 13));
+        g.setColor(Color.WHITE);
+        FontMetrics fm = g.getFontMetrics();
+        g.drawString(label, rect.x + (rect.width - fm.stringWidth(label)) / 2, rect.y + rect.height / 2 + 5);
     }
 
     // ── Game screen ────────────────────────────────────────────────────────────
@@ -568,8 +642,8 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
         for (Ball b    : balls)    b.draw(g);
         for (PowerUp p : powerUps) p.draw(g);
         for (Particle p: particles)p.draw(g);
-        basket.draw(g);
         character.draw(g);
+        basket.draw(g);
 
         // Shield aura around basket
         if (shieldActive) {
@@ -677,6 +751,15 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
         g.fillRoundRect(sx + 10, py, (int)((SIDEBAR_W - 20) * prog), 14, 7, 7);
         g.setPaint(null);
         py += 28;
+
+        gameButtons = new Rectangle[3];
+        gameButtons[0] = new Rectangle(sx + 12, py, 108, 36);
+        gameButtons[1] = new Rectangle(sx + 12, py + 44, 108, 36);
+        gameButtons[2] = new Rectangle(sx + 130, py + 44, 108, 36);
+        drawSidebarActionButton(g, gameButtons[0], "🪙 Wallet", gameHoveredButton == 0);
+        drawSidebarActionButton(g, gameButtons[1], "📦 Box",    gameHoveredButton == 1);
+        drawSidebarActionButton(g, gameButtons[2], "🚪 Exit",   gameHoveredButton == 2);
+        py += 92;
 
         // Farm emoji
         g.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 34));
@@ -1413,11 +1496,20 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
     @Override
     public void mouseMoved(MouseEvent e) {
         int mx = e.getX(), my = e.getY();
-        if (screen == GameScreen.GAME && mx < ARENA_W) basket.setTargetX(mx);
-        hoveredButton = -1;
-        if (menuButtons != null) {
-            for (int i = 0; i < menuButtons.length; i++) {
-                if (menuButtons[i] != null && menuButtons[i].contains(mx, my)) { hoveredButton = i; break; }
+        if (screen == GameScreen.GAME) {
+            if (mx < ARENA_W) basket.setTargetX(mx);
+            gameHoveredButton = -1;
+            if (gameButtons != null) {
+                for (int i = 0; i < gameButtons.length; i++) {
+                    if (gameButtons[i] != null && gameButtons[i].contains(mx, my)) { gameHoveredButton = i; break; }
+                }
+            }
+        } else {
+            hoveredButton = -1;
+            if (menuButtons != null) {
+                for (int i = 0; i < menuButtons.length; i++) {
+                    if (menuButtons[i] != null && menuButtons[i].contains(mx, my)) { hoveredButton = i; break; }
+                }
             }
         }
     }
@@ -1496,6 +1588,15 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
                 break;
             case GAME:
                 if (mx > ARENA_W) {
+                    if (gameButtons != null) {
+                        if (gameButtons.length > 0 && gameButtons[0] != null && gameButtons[0].contains(mx, my)) {
+                            showToast("🪙 Wallet: " + playerData.getTotalCoins() + " coins");
+                        } else if (gameButtons.length > 1 && gameButtons[1] != null && gameButtons[1].contains(mx, my)) {
+                            screen = GameScreen.WARDROBE;
+                        } else if (gameButtons.length > 2 && gameButtons[2] != null && gameButtons[2].contains(mx, my)) {
+                            screen = GameScreen.MAIN_MENU;
+                        }
+                    }
                     if (new Rectangle(ARENA_W + 15, H - 65, 60, 32).contains(mx, my)) sound.toggleMute();
                     if (new Rectangle(ARENA_W + 85, H - 65, 60, 32).contains(mx, my)) screen = GameScreen.PAUSED;
                 }

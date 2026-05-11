@@ -7,6 +7,7 @@ public class Character extends Entity {
     private int animTimer;
     private float bobOffset;
     private int bobTimer;
+    private float targetX, targetY;
 
     public Character(float x, float y, SkinType skin, String name) {
         super(x, y, 50, 60);
@@ -14,21 +15,30 @@ public class Character extends Entity {
         this.name = name;
         this.animState = 0;
         this.bobTimer = 0;
-        this.animTimer = 0; // FIX 1: explicitly initialize animTimer
+        this.animTimer = 0;
+        this.targetX = x;
+        this.targetY = y;
     }
 
     @Override
     public void update() {
+        x += (targetX - x) * 0.28f;
+        y += (targetY - y) * 0.28f;
+
         bobTimer++;
         bobOffset = (float)(Math.sin(bobTimer * 0.05) * 2);
 
-        // FIX 2: only count down animTimer when an animation is active
         if (animState != 0) {
             if (animTimer > 0) {
                 animTimer--;
             }
             if (animTimer == 0) animState = 0;
         }
+    }
+
+    public void setTarget(float tx, float ty) {
+        this.targetX = tx;
+        this.targetY = ty;
     }
 
     @Override
