@@ -1,7 +1,8 @@
-coins=1126
+coins=2906
 farmStage=5
 equippedSkin=FARMER_MALE
 equippedBasket=WOVEN
 ownedSkins=FARMER_MALE
 ownedBaskets=WOVEN
 achievements=first_harvest,on_fire,rich_farmer,speed_farmer
+farmerName=

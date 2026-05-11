@@ -11,6 +11,7 @@ public class PlayerData {
     private BasketSkin equippedBasket;
     private int farmStage;
     private String achievementData;
+    private String farmerName;
 
     public PlayerData() {
         totalCoins = 0;
@@ -22,6 +23,7 @@ public class PlayerData {
         equippedBasket = BasketSkin.WOVEN;
         farmStage = 1;
         achievementData = "";
+        farmerName = "";
         load();
     }
 
@@ -50,8 +52,12 @@ public class PlayerData {
     public String getAchievementData() { return achievementData; }
     public void setAchievementData(String data) { this.achievementData = data; save(); }
 
+    public String getFarmerName() { return farmerName; }
+    public void setFarmerName(String name) { farmerName = name; save(); }
+
     private void save() {
-        try (PrintWriter pw = new PrintWriter(new FileWriter(FILE))) {
+        synchronized (this) {
+            try (PrintWriter pw = new PrintWriter(new FileWriter(FILE))) {
             pw.println("coins=" + totalCoins);
             pw.println("farmStage=" + farmStage);
             pw.println("equippedSkin=" + equippedSkin.name());
@@ -63,7 +69,9 @@ public class PlayerData {
             for (BasketSkin b : ownedBaskets) { if (baskets.length()>0) baskets.append(","); baskets.append(b.name()); }
             pw.println("ownedBaskets=" + baskets);
             pw.println("achievements=" + achievementData);
+            pw.println("farmerName=" + farmerName);
         } catch (Exception e) { e.printStackTrace(); }
+        }
     }
 
     private void load() {
@@ -89,6 +97,7 @@ public class PlayerData {
                         }
                         break;
                     case "achievements": achievementData = val; break;
+                    case "farmerName": farmerName = val; break;
                 }
             }
         } catch (Exception e) { /* fresh start */ }

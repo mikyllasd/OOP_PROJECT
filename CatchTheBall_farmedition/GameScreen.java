@@ -1,6 +1,7 @@
 public enum GameScreen {
     MAIN_MENU,
     CHARACTER_CREATION,
+    EDIT_FARMER,
     GAME,
     PAUSED,
     WARDROBE,
