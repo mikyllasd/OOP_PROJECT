@@ -1,4 +1,4 @@
-coins=2730
+coins=3306
 farmStage=6
 equippedSkin=FARMER_MALE
 equippedBasket=METAL
