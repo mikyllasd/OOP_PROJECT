@@ -108,6 +108,14 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
         }
     }
 
+    private java.util.Map<SkinType, Character> skinPreviews = new java.util.HashMap<>();
+
+    private Character getSkinPreview(SkinType skin) {
+        return skinPreviews.computeIfAbsent(skin, s ->
+            new Character(0, 0, s, s.getDisplayName()));
+    }
+
+
     // ── constructor ────────────────────────────────────────────────────────────
 
     public GamePanel() {
@@ -1124,8 +1132,8 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
         // Inner highlight
         g.setColor(new Color(255, 255, 255, 30));
         g.fillRoundRect(r.x + 2, r.y + 2, r.width - 4, r.height / 2 - 2, 12, 12);
-        // Label
-        g.setFont(new Font("Arial Black", Font.PLAIN, 16));
+        // Label — use emoji-capable font so icons render properly
+        g.setFont(new Font("Segoe UI Emoji", Font.BOLD, 16));
         g.setColor(Color.WHITE);
         FontMetrics fm = g.getFontMetrics();
         g.drawString(label, r.x + (r.width - fm.stringWidth(label)) / 2, r.y + r.height / 2 + 6);
@@ -1187,15 +1195,20 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
             g.setStroke(new BasicStroke(sel ? 3f : 1.5f));
             g.drawRoundRect(bx, 265, skinBoxW, skinBoxH, 12, 12);
             g.setStroke(new BasicStroke(1f));
-            g.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 40));
-            FontMetrics emf = g.getFontMetrics();
-            String emoji = STARTER_SKINS[i].getEmoji();
-            g.drawString(emoji, bx + (skinBoxW - emf.stringWidth(emoji)) / 2, 323);
-            g.setFont(new Font("Arial", Font.BOLD, 11));
-            g.setColor(new Color(200, 240, 170));
-            FontMetrics sfm = g.getFontMetrics();
-            String sn = STARTER_SKINS[i].getDisplayName();
-            g.drawString(sn, bx + (skinBoxW - sfm.stringWidth(sn)) / 2, 358);
+            // replace the g2c block with this:
+            Graphics2D g2c = (Graphics2D) g.create();
+            float scale = 0.62f;
+            int previewCX = bx + skinBoxW / 2;
+            int previewBY = 348; // feet — lower so wizard hat doesn't get cut
+            g2c.translate(previewCX, previewBY);
+            g2c.scale(scale, scale);
+            g2c.translate(-previewCX, -previewBY);
+            g2c.setClip(bx + 2, 267, skinBoxW - 4, 90); // taller clip window
+            Character prev = getSkinPreview(STARTER_SKINS[i]);
+            prev.x = previewCX - prev.getWidth() / 2f;
+            prev.y = previewBY - prev.getHeight();
+            prev.draw(g2c);
+            g2c.dispose();
         }
 
         g.setFont(new Font("Arial", Font.BOLD, 13));
@@ -1305,10 +1318,21 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
             g.setStroke(new BasicStroke(sel ? 3f : 1.5f));
             g.drawRoundRect(bx, by, skinBoxW, skinBoxH, 12, 12);
             g.setStroke(new BasicStroke(1f));
-            g.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 40));
-            FontMetrics emf = g.getFontMetrics();
-            String emoji = editableSkins[i].getEmoji();
-            g.drawString(emoji, bx + (skinBoxW - emf.stringWidth(emoji)) / 2, by + 55);
+            
+            Graphics2D g2e = (Graphics2D) g.create();
+            float scale = 0.58f;
+            int previewCX = bx + skinBoxW / 2;
+            int previewBY = by + 80; // feet position
+            g2e.translate(previewCX, previewBY);
+            g2e.scale(scale, scale);
+            g2e.translate(-previewCX, -previewBY);
+            g2e.setClip(bx + 2, by + 2, skinBoxW - 4, skinBoxH - 35); // enough height for tall hats
+            Character prev2 = getSkinPreview(editableSkins[i]);
+            prev2.x = previewCX - prev2.getWidth() / 2f;
+            prev2.y = previewBY - prev2.getHeight();
+            prev2.draw(g2e);
+            g2e.dispose();
+
             g.setFont(new Font("Arial", Font.BOLD, 11));
             g.setColor(owned ? new Color(200, 240, 170) : new Color(150, 150, 150));
             FontMetrics sfm = g.getFontMetrics();
@@ -1423,7 +1447,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
                 int by = 140 + row * (boxH + 15);
                 boolean owned    = playerData.ownsSkin(skins[i]);
                 boolean equipped = playerData.getEquippedSkin() == skins[i];
-                drawShopItemEmoji(g, bx, by, boxW, boxH, skins[i].getEmoji(), skins[i].getDisplayName(), skins[i].getCost(), owned, equipped);
+                drawShopItemCharacter(g, bx, by, boxW, boxH, skins[i], owned, equipped);
             }
         } else {
             // ── FIX: basket skins drawn via skin.draw(), not getEmoji() ──
@@ -1442,16 +1466,42 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
 
     /** Shop card for SkinType (emoji-based character skins) */
     private void drawShopItemEmoji(Graphics2D g, int x, int y, int w, int h,
-                                   String emoji, String name, int cost,
-                                   boolean owned, boolean equipped) {
+                                    String emoji, String name, int cost,
+                                    boolean owned, boolean equipped) {
+            drawShopCard(g, x, y, w, h, owned, equipped);
+
+            g.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 36));
+            FontMetrics fm = g.getFontMetrics();
+            g.setColor(Color.WHITE);
+            g.drawString(emoji, x + (w - fm.stringWidth(emoji)) / 2, y + 55);
+
+            drawShopCardLabels(g, x, y, w, h, name, cost, owned, equipped);
+        }
+
+        private void drawShopItemCharacter(Graphics2D g, int x, int y, int w, int h,
+                                    SkinType skin, boolean owned, boolean equipped) {
         drawShopCard(g, x, y, w, h, owned, equipped);
 
-        g.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 36));
-        FontMetrics fm = g.getFontMetrics();
-        g.setColor(Color.WHITE);
-        g.drawString(emoji, x + (w - fm.stringWidth(emoji)) / 2, y + 55);
+        Graphics2D g2 = (Graphics2D) g.create();
+        float scale = 0.58f;
+        int previewCX = x + w / 2;
+        int previewBY = y + 85; // feet position — lower so full body fits
 
-        drawShopCardLabels(g, x, y, w, h, name, cost, owned, equipped);
+        g2.translate(previewCX, previewBY);
+        g2.scale(scale, scale);
+        g2.translate(-previewCX, -previewBY);
+        g2.setClip(x + 2, y + 2, w - 4, h - 30); // leave bottom for labels
+
+        Character preview = getSkinPreview(skin);
+        float oldX = preview.x, oldY = preview.y;
+        preview.x = previewCX - preview.getWidth() / 2f;
+        preview.y = previewBY - preview.getHeight();
+        preview.draw(g2);
+        preview.x = oldX;
+        preview.y = oldY;
+        g2.dispose();
+
+        drawShopCardLabels(g, x, y, w, h, skin.getDisplayName(), skin.getCost(), owned, equipped);
     }
 
     /** Shop card for BasketSkin (drawn via skin.draw()) — FIX for getEmoji() error */
