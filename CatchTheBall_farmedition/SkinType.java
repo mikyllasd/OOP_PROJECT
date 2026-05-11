@@ -5,6 +5,9 @@ public enum SkinType {
     COWBOY("🤠", "Cowboy", 350),
     WIZARD("🧙", "Wizard Farmer", 500),
     NINJA("🥷", "Ninja Farmer", 750),
+    BEEKEEPER("🐝", "Beekeeper", 1200),
+    FLOWER_FARMER("🌸", "Flower Farmer", 1400),
+    TRACTOR_DRIVER("🚜", "Tractor Driver", 1600),
     ROYAL("👑", "Royal Farmer", 1000);
 
     private final String emoji;

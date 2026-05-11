@@ -7,8 +7,8 @@ import java.util.List;
 
 public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMotionListener, MouseListener {
 
-    private static final int W = 900, H = 650;
-    private static final int ARENA_W = 650, SIDEBAR_W = 250;
+    private static final int W = 1100, H = 760;
+    private static final int ARENA_W = 800, SIDEBAR_W = 300;
 
     private Thread gameThread;
     private volatile boolean running;
@@ -38,6 +38,10 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
     private List<Cloud> clouds;
     private List<RainDrop> rainDrops;
 
+    private Random rand;
+    private int spawnTimer, powerUpSpawnTimer;
+    private final Object lock = new Object();
+
     // Animated background stars/fireflies
     private float[] fireflyX, fireflyY, fireflyPhase;
     private float[] starTwinkle;
@@ -49,23 +53,27 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
 
     private StringBuilder nameInput = new StringBuilder();
     private int selectedStarterSkin = 0;
+    private int selectedSkinIndex = 0;
+    private SkinType[] editableSkins;
+    private Rectangle[] skinRects;
+    private Rectangle saveButton, backButton;
     private static final SkinType[] STARTER_SKINS = {SkinType.FARMER_MALE, SkinType.FARMER_FEMALE, SkinType.FARM_KID};
 
     private Rectangle[] menuButtons;
+    private Rectangle[] gameButtons;
     private int hoveredButton = -1;
+    private int gameHoveredButton = -1;
 
     private int shopTab = 0;
     private int selectedShopItem = -1;
 
     private String pendingLeaderboardName = "";
 
-    private int spawnTimer = 0;
-    private int powerUpSpawnTimer = 0;
-    private Random rand = new Random();
-
     private static final int[] LEVEL_TARGETS = {
         200, 400, 700, 1100, 1600, 2200, 2900, 3700, 4600, 5600
     };
+
+    private int getLevelTarget() { return LEVEL_TARGETS[Math.min(level-1, LEVEL_TARGETS.length-1)]; }
 
     // ── inner helpers ──────────────────────────────────────────────────────────
 
@@ -115,6 +123,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
         sound        = new SoundManager();
         farm         = new FarmProgression(playerData.getFarmStage());
 
+        rand = new Random();
         achievements.loadFromString(playerData.getAchievementData());
         initClouds();
         initAmbient();
@@ -180,7 +189,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
         }
         for (int i = 0; i < starTwinkle.length; i++) starTwinkle[i] += 0.04f;
 
-        if (screen == GameScreen.GAME) gameUpdate();
+        if (screen == GameScreen.GAME) synchronized (lock) { gameUpdate(); }
         if (toastTimer     > 0) toastTimer--;
         if (comboFlashTimer > 0) comboFlashTimer--;
         if (screenShakeTimer > 0) {
@@ -203,6 +212,9 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
             if (timeLeft == 0) endGame();
         }
         basket.update();
+        float targetCharX = basket.getX() + basket.getShakeOffset() + basket.getWidth() / 2f - character.getWidth() / 2f;
+        float targetCharY = basket.getY() - character.getHeight() + 10;
+        character.setTarget(targetCharX, targetCharY);
         character.update();
         character.setActive(true);
 
@@ -262,19 +274,14 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
         for (Particle p : particles) p.update();
         if (level >= 7) for (RainDrop r : rainDrops) r.update(H);
 
-        int target = getLevelTarget();
-        if (score >= target) {
+        // Level up every 30 seconds
+        if (tickCount % 1800 == 0 && tickCount > 0) {
             level++;
-            timeLeft = 180;
             sound.playLevelUp();
             showToast("🎉 Level Up! Level " + level);
             spawnParticles(ARENA_W / 2, H / 2, new Color(255, 215, 0), 30);
             checkAchievements();
         }
-    }
-
-    private int getLevelTarget() {
-        return LEVEL_TARGETS[Math.min(level - 1, LEVEL_TARGETS.length - 1)];
     }
 
     private void handleCatch(Ball b) {
@@ -407,6 +414,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
         switch (screen) {
             case MAIN_MENU:         drawMainMenu(g);   break;
             case CHARACTER_CREATION:drawCharCreation(g);break;
+            case EDIT_FARMER:       drawEditFarmer(g); break;
             case GAME:              drawGame(g);        break;
             case PAUSED:            drawGame(g); drawPause(g); break;
             case WARDROBE:          drawWardrobe(g);    break;
@@ -421,22 +429,45 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
     // ── Sky background ─────────────────────────────────────────────────────────
 
     private void drawSkyBackground(Graphics2D g, int lv) {
-        // Sky gradient per level bracket
+        int theme = (lv - 1) / 2;
+        // Sky gradient per theme (every 2 levels)
         Color skyTop, skyBot;
-        if      (lv <= 3) { skyTop = new Color(72, 158, 255);  skyBot = new Color(178, 224, 255); }
-        else if (lv <= 6) { skyTop = new Color(255, 160, 40);  skyBot = new Color(255, 220, 120); }
-        else if (lv <= 9) { skyTop = new Color(200, 60,  30);  skyBot = new Color(255, 140,  60); }
-        else              { skyTop = new Color(8,   12,  45);  skyBot = new Color(30,  42,  80); }
+        switch (theme % 4) {
+            case 0: // Day - light blue to pale blue
+                skyTop = new Color(135, 206, 250);
+                skyBot = new Color(173, 216, 230);
+                break;
+            case 1: // Evening
+                skyTop = new Color(255, 160, 40);
+                skyBot = new Color(255, 220, 120);
+                break;
+            case 2: // Night
+                skyTop = new Color(8, 12, 45);
+                skyBot = new Color(30, 42, 80);
+                break;
+            case 3: // Snow
+            default:
+                skyTop = new Color(200, 220, 255);
+                skyBot = new Color(240, 250, 255);
+                break;
+        }
 
         GradientPaint sky = new GradientPaint(0, 0, skyTop, 0, H - 80, skyBot);
         g.setPaint(sky);
-        g.fillRect(0, 0, ARENA_W, H);
+        g.fillRect(0, 0, W, H);
+        g.setPaint(null);
 
-        // Stars at night (twinkle via sine)
-        if (lv >= 8) {
+        // Mountains in the distance (parallax layer)
+        drawMountains(g, theme);
+
+        // Random trees for variety
+        drawRandomTrees(g, theme);
+
+        // Stars at night
+        if (theme % 4 == 2) {
             Random sr = new Random(42);
             for (int i = 0; i < 60; i++) {
-                int sx = sr.nextInt(ARENA_W);
+                int sx = sr.nextInt(W);
                 int sy = sr.nextInt(H / 2);
                 float brightness = 0.5f + 0.5f * (float)Math.sin(starTwinkle[i]);
                 int alpha = (int)(brightness * 220);
@@ -452,17 +483,15 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
             }
         }
 
-        // Sun or Moon
-        if (lv <= 6) {
-            // Sun with glow
-            int sunX = ARENA_W - 80, sunY = 60;
+        // Sun for day/evening
+        if (theme % 4 == 0 || theme % 4 == 1) {
+            int sunX = W - 80, sunY = 60;
             g.setColor(new Color(255, 240, 120, 40));
             g.fillOval(sunX - 18, sunY - 18, 56, 56);
             g.setColor(new Color(255, 235, 80, 80));
             g.fillOval(sunX - 10, sunY - 10, 40, 40);
             g.setColor(new Color(255, 230, 60));
             g.fillOval(sunX, sunY, 22, 22);
-            // Sun rays
             g.setColor(new Color(255, 230, 60, 130));
             g.setStroke(new BasicStroke(1.5f));
             for (int a = 0; a < 8; a++) {
@@ -475,66 +504,47 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
             }
             g.setStroke(new BasicStroke(1f));
         } else if (lv >= 8) {
-            // Moon
-            int mx2 = ARENA_W - 80, my2 = 55;
+            int mx2 = W - 80, my2 = 55;
             g.setColor(new Color(220, 230, 255, 30));
             g.fillOval(mx2 - 12, my2 - 12, 48, 48);
             g.setColor(new Color(230, 238, 255));
             g.fillOval(mx2, my2, 26, 26);
             g.setColor(new Color(72, 90, 140));
-            g.fillOval(mx2 + 6, my2 - 4, 20, 20); // crescent shadow
+            g.fillOval(mx2 + 6, my2 - 4, 20, 20);
         }
 
-        // Clouds (layered with subtle colour tint)
         for (Cloud c : clouds) {
             Color cloudColor;
-            if      (lv <= 3) cloudColor = new Color(255, 255, 255, (int)(c.alpha * 210));
-            else if (lv <= 6) cloudColor = new Color(255, 210, 150, (int)(c.alpha * 180));
-            else              cloudColor = new Color(180, 120, 100, (int)(c.alpha * 140));
+            switch (theme % 4) {
+                case 0: cloudColor = new Color(255, 255, 255, (int)(c.alpha * 210)); break;
+                case 1: cloudColor = new Color(255, 210, 150, (int)(c.alpha * 180)); break;
+                case 2: cloudColor = new Color(180, 120, 100, (int)(c.alpha * 140)); break;
+                case 3: cloudColor = new Color(240, 240, 250, (int)(c.alpha * 160)); break;
+                default: cloudColor = new Color(255, 255, 255, (int)(c.alpha * 210)); break;
+            }
             g.setColor(cloudColor);
-            g.fillOval((int)c.x,                       (int)c.y,                      c.w,            c.h);
-            g.fillOval((int)(c.x + c.w * 0.18),        (int)(c.y - c.h * 0.32),       (int)(c.w * 0.68), (int)(c.h * 0.95));
-            g.fillOval((int)(c.x + c.w * 0.52),        (int)(c.y - c.h * 0.08),       (int)(c.w * 0.48), (int)(c.h * 0.75));
+            g.fillOval((int)c.x, (int)c.y, c.w, c.h);
+            g.fillOval((int)(c.x + c.w * 0.18), (int)(c.y - c.h * 0.32), (int)(c.w * 0.68), (int)(c.h * 0.95));
+            g.fillOval((int)(c.x + c.w * 0.52), (int)(c.y - c.h * 0.08), (int)(c.w * 0.48), (int)(c.h * 0.75));
         }
 
-        // Fireflies at dusk/night
-        if (lv >= 5) {
+        // Fireflies for evening/night
+        if (theme % 4 == 1 || theme % 4 == 2) {
             for (int i = 0; i < fireflyX.length; i++) {
                 float glow = 0.4f + 0.6f * (float)Math.sin(fireflyPhase[i] * 1.8);
-                int alpha  = (int)(glow * 200);
-                // outer glow
+                int alpha  = Math.max(0, (int)(glow * 200));
                 g.setColor(new Color(180, 255, 120, alpha / 4));
                 g.fillOval((int)fireflyX[i] - 5, (int)fireflyY[i] - 5, 10, 10);
-                // bright core
                 g.setColor(new Color(200, 255, 100, alpha));
                 g.fillOval((int)fireflyX[i] - 2, (int)fireflyY[i] - 2, 4, 4);
             }
         }
 
-        // Ground: rich layered grass
-        // Back layer (darker)
-        GradientPaint grassBack = new GradientPaint(0, H - 80, new Color(45, 115, 35), 0, H, new Color(28, 80, 20));
-        g.setPaint(grassBack);
-        g.fillRect(0, H - 80, ARENA_W, 80);
+        // Background elements: trees and houses
+        drawBackgroundElements(g, theme);
 
-        // Mid tufts
-        g.setPaint(null);
-        g.setColor(new Color(60, 145, 48));
-        for (int i = 0; i < ARENA_W; i += 18) {
-            int gy = H - 80;
-            g.fillArc(i - 2, gy - 6, 16, 14, 0, 180);
-        }
-        // Front highlights
-        g.setColor(new Color(90, 185, 65, 140));
-        for (int i = 5; i < ARENA_W; i += 24) {
-            g.fillArc(i, H - 82, 10, 10, 0, 180);
-        }
+        drawFullGrass(g, W, theme);
 
-        // Dirt path
-        g.setColor(new Color(160, 120, 70, 60));
-        g.fillRect(ARENA_W / 2 - 40, H - 80, 80, 80);
-
-        // Rain at storm levels
         if (lv >= 7) {
             g.setStroke(new BasicStroke(1.2f));
             for (RainDrop r : rainDrops) {
@@ -544,19 +554,309 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
             }
             g.setStroke(new BasicStroke(1f));
 
-            // Lightning flash (rare)
             if (tickCount % 240 == 0) {
                 g.setColor(new Color(255, 255, 255, 60));
-                g.fillRect(0, 0, ARENA_W, H);
+                g.fillRect(0, 0, W, H);
             }
         }
 
-        // Horizon shimmer (heat haze at dusk)
         if (lv >= 4 && lv <= 6) {
             float shimmer = 0.3f + 0.2f * (float)Math.sin(tickCount * 0.07);
             g.setColor(new Color(255, 180, 60, (int)(shimmer * 40)));
-            g.fillRect(0, H - 100, ARENA_W, 20);
+            g.fillRect(0, H - 100, W, 20);
         }
+    }
+
+    private void drawSkyBackgroundFull(Graphics2D g, int lv) {
+        Color skyTop, skyBot;
+        if      (lv <= 3) { skyTop = new Color(72, 158, 255);  skyBot = new Color(178, 224, 255); }
+        else if (lv <= 6) { skyTop = new Color(255, 160, 40);  skyBot = new Color(255, 220, 120); }
+        else if (lv <= 9) { skyTop = new Color(200, 60,  30);  skyBot = new Color(255, 140,  60); }
+        else              { skyTop = new Color(8,   12,  45);  skyBot = new Color(30,  42,  80); }
+
+        GradientPaint sky = new GradientPaint(0, 0, skyTop, 0, H - 80, skyBot);
+        g.setPaint(sky);
+        g.fillRect(0, 0, W, H);
+        g.setPaint(null);
+
+        if (lv >= 8) {
+            Random sr = new Random(42);
+            for (int i = 0; i < 60; i++) {
+                int sx = sr.nextInt(W);
+                int sy = sr.nextInt(H / 2);
+                float brightness = 0.5f + 0.5f * (float)Math.sin(starTwinkle[i]);
+                int alpha = (int)(brightness * 220);
+                g.setColor(new Color(255, 255, 210, alpha));
+                int ss = 1 + (i % 3 == 0 ? 1 : 0);
+                g.fillOval(sx, sy, ss, ss);
+                if (i % 8 == 0 && brightness > 0.8f) {
+                    g.setColor(new Color(255, 255, 200, 80));
+                    g.drawLine(sx - 3, sy, sx + 3, sy);
+                    g.drawLine(sx, sy - 3, sx, sy + 3);
+                }
+            }
+        }
+
+        if (lv <= 6) {
+            int sunX = W - 80, sunY = 60;
+            g.setColor(new Color(255, 240, 120, 40));
+            g.fillOval(sunX - 18, sunY - 18, 56, 56);
+            g.setColor(new Color(255, 235, 80, 80));
+            g.fillOval(sunX - 10, sunY - 10, 40, 40);
+            g.setColor(new Color(255, 230, 60));
+            g.fillOval(sunX, sunY, 22, 22);
+            g.setColor(new Color(255, 230, 60, 130));
+            g.setStroke(new BasicStroke(1.5f));
+            for (int a = 0; a < 8; a++) {
+                double angle = Math.toRadians(a * 45 + (tickCount * 0.3));
+                int x1 = (int)(sunX + 11 + Math.cos(angle) * 16);
+                int y1 = (int)(sunY + 11 + Math.sin(angle) * 16);
+                int x2 = (int)(sunX + 11 + Math.cos(angle) * 22);
+                int y2 = (int)(sunY + 11 + Math.sin(angle) * 22);
+                g.drawLine(x1, y1, x2, y2);
+            }
+            g.setStroke(new BasicStroke(1f));
+        } else if (lv >= 8) {
+            int mx2 = W - 80, my2 = 55;
+            g.setColor(new Color(220, 230, 255, 30));
+            g.fillOval(mx2 - 12, my2 - 12, 48, 48);
+            g.setColor(new Color(230, 238, 255));
+            g.fillOval(mx2, my2, 26, 26);
+            g.setColor(new Color(72, 90, 140));
+            g.fillOval(mx2 + 6, my2 - 4, 20, 20);
+        }
+
+        drawFullGrass(g, W, 0);
+    }
+
+    private void drawFullGrass(Graphics2D g, int width, int theme) {
+        if (theme % 4 == 3) { // Snow
+            g.setColor(Color.WHITE);
+            g.fillRect(0, H - 100, width, 100);
+            g.setColor(new Color(255, 255, 255, 200));
+            for (int i = 0; i < width; i += 50) {
+                g.fillOval(i, H - 110, 30, 20);
+            }
+        } else {
+            GradientPaint grassBack = new GradientPaint(0, H - 100, new Color(45, 115, 35), 0, H, new Color(28, 80, 20));
+            g.setPaint(grassBack);
+            g.fillRect(0, H - 100, width, 100);
+            g.setPaint(null);
+
+            g.setColor(new Color(60, 145, 48));
+            for (int i = 0; i < width; i += 18) {
+                g.fillArc(i - 2, H - 106, 16, 14, 0, 180);
+            }
+            g.setColor(new Color(90, 185, 65, 140));
+            for (int i = 5; i < width; i += 24) {
+                g.fillArc(i, H - 108, 10, 10, 0, 180);
+            }
+
+            g.setColor(new Color(255, 255, 255, 14));
+            for (int i = 12; i < width; i += 36) {
+                g.fillOval(i, H - 86 - (i % 72 == 0 ? 2 : 0), 4, 4);
+            }
+        }
+    }
+
+    private void drawBackgroundElements(Graphics2D g, int theme) {
+        int baseY = H - 100;
+        Color leafColor = new Color(34, 139, 34);
+        Color trunkColor = new Color(139, 69, 19);
+        Color houseColor = new Color(210, 180, 140);
+        Color roofColor = new Color(139, 69, 19);
+        Color trimColor = new Color(255, 240, 180);
+
+        switch (theme % 4) {
+            case 1: // Evening
+                leafColor = new Color(235, 120, 45);
+                trunkColor = new Color(120, 50, 18);
+                houseColor = new Color(220, 160, 110);
+                roofColor = new Color(140, 60, 20);
+                trimColor = new Color(255, 220, 140);
+                break;
+            case 2: // Night
+                leafColor = new Color(80, 115, 145);
+                trunkColor = new Color(90, 70, 50);
+                houseColor = new Color(95, 115, 145);
+                roofColor = new Color(55, 75, 110);
+                trimColor = new Color(210, 220, 255);
+                break;
+            case 3: // Snow
+                leafColor = new Color(180, 230, 255);
+                trunkColor = new Color(130, 110, 90);
+                houseColor = new Color(230, 240, 250);
+                roofColor = new Color(180, 200, 220);
+                trimColor = new Color(255, 255, 255);
+                break;
+        }
+
+        // Trees
+        // Tree 1 (large)
+        g.setColor(trunkColor);
+        g.fillRect(80, baseY - 70, 18, 70);
+        g.setColor(leafColor);
+        g.fillOval(55, baseY - 130, 75, 80);
+        g.fillOval(65, baseY - 150, 55, 90);
+        if (theme % 4 == 3) {
+            g.setColor(new Color(255, 255, 255, 220));
+            g.fillOval(58, baseY - 126, 40, 26);
+            g.fillOval(68, baseY - 146, 34, 30);
+        }
+
+        // Tree 2 (medium)
+        g.setColor(trunkColor);
+        g.fillRect(260, baseY - 60, 14, 60);
+        g.setColor(leafColor);
+        g.fillOval(240, baseY - 110, 60, 56);
+        g.fillOval(250, baseY - 130, 46, 70);
+        if (theme % 4 == 3) {
+            g.setColor(new Color(255, 255, 255, 210));
+            g.fillOval(244, baseY - 106, 36, 22);
+        }
+
+        // Tree 3 (small)
+        g.setColor(trunkColor);
+        g.fillRect(150, baseY - 50, 12, 50);
+        g.setColor(leafColor);
+        g.fillOval(130, baseY - 90, 50, 45);
+        if (theme % 4 == 3) {
+            g.setColor(new Color(255, 255, 255, 200));
+            g.fillOval(135, baseY - 85, 25, 15);
+        }
+
+        // Tree 4 (tall)
+        g.setColor(trunkColor);
+        g.fillRect(350, baseY - 80, 16, 80);
+        g.setColor(leafColor);
+        g.fillOval(325, baseY - 140, 65, 75);
+        g.fillOval(335, baseY - 160, 45, 85);
+        if (theme % 4 == 3) {
+            g.setColor(new Color(255, 255, 255, 215));
+            g.fillOval(330, baseY - 135, 35, 25);
+        }
+
+        // Tree 5 (bushy)
+        g.setColor(trunkColor);
+        g.fillRect(500, baseY - 55, 13, 55);
+        g.setColor(leafColor);
+        g.fillOval(480, baseY - 100, 55, 50);
+        g.fillOval(485, baseY - 115, 45, 60);
+        if (theme % 4 == 3) {
+            g.setColor(new Color(255, 255, 255, 205));
+            g.fillOval(485, baseY - 95, 30, 20);
+        }
+
+        // Houses
+        // House 1
+        g.setColor(houseColor);
+        g.fillRect(440, baseY - 90, 90, 90);
+        g.setColor(roofColor);
+        int[] xPoints1 = {430, 485, 540};
+        int[] yPoints1 = {baseY - 90, baseY - 130, baseY - 90};
+        g.fillPolygon(xPoints1, yPoints1, 3);
+        g.setColor(trimColor);
+        g.fillRect(475, baseY - 50, 20, 40);
+        g.setColor(new Color(120, 70, 40));
+        g.fillRect(470, baseY - 38, 10, 28);
+        if (theme % 4 == 3) {
+            g.setColor(new Color(255, 255, 255, 220));
+            g.fillRect(462, baseY - 132, 30, 14);
+            g.fillRect(500, baseY - 132, 30, 14);
+        }
+
+        // House 2
+        g.setColor(houseColor.darker());
+        g.fillRect(610, baseY - 80, 70, 80);
+        g.setColor(roofColor.darker());
+        int[] xPoints2 = {600, 645, 690};
+        int[] yPoints2 = {baseY - 80, baseY - 110, baseY - 80};
+        g.fillPolygon(xPoints2, yPoints2, 3);
+        g.setColor(trimColor);
+        g.fillRect(640, baseY - 40, 16, 40);
+        if (theme % 4 == 3) {
+            g.setColor(new Color(255, 255, 255, 210));
+            g.fillArc(607, baseY - 83, 18, 12, 0, 180);
+        }
+
+        // House 3 (small cottage)
+        g.setColor(houseColor.brighter());
+        g.fillRect(720, baseY - 70, 60, 70);
+        g.setColor(roofColor);
+        int[] xPoints3 = {710, 750, 790};
+        int[] yPoints3 = {baseY - 70, baseY - 100, baseY - 70};
+        g.fillPolygon(xPoints3, yPoints3, 3);
+        g.setColor(trimColor);
+        g.fillRect(745, baseY - 35, 15, 35);
+        if (theme % 4 == 3) {
+            g.setColor(new Color(255, 255, 255, 200));
+            g.fillRect(735, baseY - 102, 20, 10);
+        }
+    }
+
+    private void drawMountains(Graphics2D g, int theme) {
+        // Simple mountain silhouettes for parallax effect
+        g.setColor(new Color(80, 80, 80, 120)); // distant gray
+        // Mountain 1
+        int[] x1 = {0, 120, 240};
+        int[] y1 = {H - 80, H - 150, H - 80};
+        g.fillPolygon(x1, y1, 3);
+        // Mountain 2
+        int[] x2 = {180, 300, 420};
+        int[] y2 = {H - 80, H - 130, H - 80};
+        g.fillPolygon(x2, y2, 3);
+        // Mountain 3
+        int[] x3 = {360, 480, 600};
+        int[] y3 = {H - 80, H - 140, H - 80};
+        g.fillPolygon(x3, y3, 3);
+        // Mountain 4
+        int[] x4 = {540, 660, 780};
+        int[] y4 = {H - 80, H - 160, H - 80};
+        g.fillPolygon(x4, y4, 3);
+        // Mountain 5
+        int[] x5 = {720, 840, 960};
+        int[] y5 = {H - 80, H - 120, H - 80};
+        g.fillPolygon(x5, y5, 3);
+    }
+
+    private void drawRandomTrees(Graphics2D g, int theme) {
+        Random rand = new Random(12345); // fixed seed for consistent generation
+        Color treeColor = new Color(34, 139, 34);
+        if (theme % 4 == 1) treeColor = new Color(235, 120, 45);
+        else if (theme % 4 == 2) treeColor = new Color(80, 115, 145);
+        else if (theme % 4 == 3) treeColor = new Color(180, 230, 255);
+        g.setColor(treeColor);
+
+        int treeSpacing = 40; // spacing to avoid big gaps
+        for (int i = 0; i < ARENA_W; i += treeSpacing) {
+            int x = i + rand.nextInt(treeSpacing / 2); // vary position
+            int y = H - 120 + rand.nextInt(10); // near ground
+            int size = 15 + rand.nextInt(10); // vary size
+            if (rand.nextBoolean()) { // Pine tree (triangular)
+                int[] px = {x, x + size / 2, x + size};
+                int[] py = {y, y - size, y};
+                g.fillPolygon(px, py, 3);
+            } else { // Oak tree (round)
+                g.fillOval(x, y - size, size, size);
+            }
+        }
+    }
+
+    private void drawSidebarActionButton(Graphics2D g, Rectangle rect, String label, boolean hovered) {
+        Color bg = hovered ? new Color(100, 190, 70) : new Color(70, 130, 50);
+        Color border = hovered ? new Color(190, 245, 110) : new Color(120, 180, 80);
+        GradientPaint btnGrad = new GradientPaint(rect.x, rect.y, bg.brighter(), rect.x, rect.y + rect.height, bg.darker());
+        g.setPaint(btnGrad);
+        g.fillRoundRect(rect.x, rect.y, rect.width, rect.height, 12, 12);
+        g.setPaint(null);
+        g.setColor(border);
+        g.setStroke(new BasicStroke(2f));
+        g.drawRoundRect(rect.x, rect.y, rect.width, rect.height, 12, 12);
+        g.setStroke(new BasicStroke(1f));
+        g.setFont(new Font("Arial", Font.BOLD, 13));
+        g.setColor(Color.WHITE);
+        FontMetrics fm = g.getFontMetrics();
+        g.drawString(label, rect.x + (rect.width - fm.stringWidth(label)) / 2, rect.y + rect.height / 2 + 5);
     }
 
     // ── Game screen ────────────────────────────────────────────────────────────
@@ -565,11 +865,13 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
         g.translate((int)screenShakeX, (int)screenShakeY);
         drawSkyBackground(g, level);
 
-        for (Ball b    : balls)    b.draw(g);
-        for (PowerUp p : powerUps) p.draw(g);
-        for (Particle p: particles)p.draw(g);
-        basket.draw(g);
+        synchronized (lock) {
+            for (Ball b    : balls)    b.draw(g);
+            for (PowerUp p : powerUps) p.draw(g);
+            for (Particle p: particles)p.draw(g);
+        }
         character.draw(g);
+        basket.draw(g);
 
         // Shield aura around basket
         if (shieldActive) {
@@ -637,7 +939,6 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
 
         drawSidebarItem(g, sx + 12, py, "LEVEL",  "" + level, new Color(255, 228, 80), titleFont, valFont); py += 58;
         drawSidebarItem(g, sx + 12, py, "SCORE",  "" + score, new Color(100, 228, 255), titleFont, valFont); py += 58;
-        drawSidebarItem(g, sx + 12, py, "TARGET", "" + getLevelTarget(), new Color(200, 200, 200), titleFont, new Font("Arial", Font.BOLD, 16)); py += 48;
 
         boolean pulse      = timeLeft <= 30 && tickCount % 30 < 15;
         Color timerColor   = timeLeft <= 30 ? new Color(255, 80, 80) : new Color(100, 255, 150);
@@ -649,7 +950,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
         String secs = String.format("%02d", timeLeft % 60);
         drawSidebarItem(g, sx + 12, py, "TIME", mins + ":" + secs, timerColor, titleFont, valFont); py += 62;
 
-        drawSidebarItem(g, sx + 12, py, "COINS 🪙", "" + playerData.getTotalCoins(), new Color(255, 215, 50), titleFont, new Font("Arial", Font.BOLD, 18)); py += 52;
+        drawSidebarItem(g, sx + 12, py, "COINS 💰", "" + playerData.getTotalCoins(), new Color(255, 215, 50), titleFont, new Font("Arial", Font.BOLD, 18)); py += 52;
 
         if (combo > 0) {
             Color cc = combo >= 8 ? new Color(255, 100, 255) : combo >= 5 ? new Color(255, 180, 50) : new Color(100, 255, 200);
@@ -677,6 +978,15 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
         g.fillRoundRect(sx + 10, py, (int)((SIDEBAR_W - 20) * prog), 14, 7, 7);
         g.setPaint(null);
         py += 28;
+
+        gameButtons = new Rectangle[3];
+        gameButtons[0] = new Rectangle(sx + 12, py, 108, 36);
+        gameButtons[1] = new Rectangle(sx + 12, py + 44, 108, 36);
+        gameButtons[2] = new Rectangle(sx + 130, py + 44, 108, 36);
+        drawSidebarActionButton(g, gameButtons[0], "🏦 Bank", gameHoveredButton == 0);
+        drawSidebarActionButton(g, gameButtons[1], "🛒 Shop", gameHoveredButton == 1);
+        drawSidebarActionButton(g, gameButtons[2], "❌ Quit",   gameHoveredButton == 2);
+        py += 92;
 
         // Farm emoji
         g.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 34));
@@ -735,7 +1045,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
 
         // Title drop shadow
         g.setFont(new Font("Arial Black", Font.BOLD, 52));
-        String title = "🌾 Catch the Ball!";
+        String title = "🌾 Catch the Ball! 🚜";
         FontMetrics fm = g.getFontMetrics();
         int tx = (W - fm.stringWidth(title)) / 2;
         g.setColor(new Color(20, 60, 10, 180));
@@ -754,7 +1064,8 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
         g.drawString(sub, (W - fm2.stringWidth(sub)) / 2, 165);
 
         // Buttons with hover glow
-        String[] labels = {"▶  Play Game", "🏆  Leaderboard", "🧺  Wardrobe", "🏡  Farm Upgrade", "🏅  Achievements"};
+        boolean hasFarmer = playerData.getFarmerName() != null && !playerData.getFarmerName().isEmpty();
+        String[] labels = hasFarmer ? new String[]{"▶  Play Game", "🏆  Leaderboard", "🧺  Wardrobe", "🏡  Farm Upgrade", "🏅  Achievements", "✏️  Edit Farmer"} : new String[]{"▶  Play Game", "🏆  Leaderboard", "🧺  Wardrobe", "🏡  Farm Upgrade", "🏅  Achievements"};
         menuButtons = new Rectangle[labels.length];
         int bw = 270, bh = 50, bx = (W - bw) / 2, by = 205;
         for (int i = 0; i < labels.length; i++) {
@@ -893,6 +1204,119 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
         g.setFont(new Font("Arial Black", Font.BOLD, 17));
         g.setColor(canStart ? Color.WHITE : new Color(120, 150, 110));
         String btnText = "Start Farming! 🌾";
+        FontMetrics bfm = g.getFontMetrics();
+        g.drawString(btnText, W/2 - bfm.stringWidth(btnText) / 2, 521);
+
+        g.setFont(new Font("Arial", Font.BOLD, 13));
+        g.setColor(new Color(180, 220, 150));
+        g.drawString("← Back to Menu", W/2 - 280 + 15, 553);
+    }
+
+    // ── Edit Farmer ────────────────────────────────────────────────────────────
+
+    private void drawEditFarmer(Graphics2D g) {
+        drawSkyBackground(g, 1);
+        g.setColor(new Color(0, 0, 0, 100));
+        g.fillRect(0, 0, W, H);
+
+        // Initialize variables
+        editableSkins = playerData.getOwnedSkins().toArray(new SkinType[0]);
+        skinRects = new Rectangle[editableSkins.length];
+        saveButton = new Rectangle(W/2 - 130, 488, 260, 50);
+        backButton = new Rectangle(W/2 - 280, 540, 120, 20);
+
+        // Prefill values
+        if (nameInput.length() == 0 && playerData.getFarmerName() != null) {
+            nameInput.append(playerData.getFarmerName());
+        }
+        selectedSkinIndex = Arrays.asList(editableSkins).indexOf(playerData.getEquippedSkin());
+
+        int px = W/2 - 280, py = 60;
+        // Panel background
+        GradientPaint panelBg = new GradientPaint(px, py, new Color(28, 65, 18, 230), px, py + 520, new Color(18, 45, 10, 230));
+        g.setPaint(panelBg);
+        g.fillRoundRect(px, py, 560, 520, 20, 20);
+        g.setPaint(null);
+        g.setColor(new Color(90, 170, 65));
+        g.setStroke(new BasicStroke(2f));
+        g.drawRoundRect(px, py, 560, 520, 20, 20);
+        g.setStroke(new BasicStroke(1f));
+
+        g.setFont(new Font("Arial Black", Font.BOLD, 26));
+        g.setColor(new Color(255, 230, 80));
+        String t = "✏️ Edit Your Farmer";
+        FontMetrics fm = g.getFontMetrics();
+        g.drawString(t, (W - fm.stringWidth(t)) / 2, 113);
+
+        g.setFont(new Font("Arial", Font.BOLD, 15));
+        g.setColor(new Color(200, 230, 160));
+        g.drawString("Farmer Name:", W/2 - 200, 163);
+        g.setColor(new Color(45, 95, 35));
+        g.fillRoundRect(W/2 - 200, 173, 400, 40, 8, 8);
+        g.setColor(new Color(100, 200, 80));
+        g.setStroke(new BasicStroke(2f));
+        g.drawRoundRect(W/2 - 200, 173, 400, 40, 8, 8);
+        g.setStroke(new BasicStroke(1f));
+        g.setFont(new Font("Arial", Font.PLAIN, 18));
+        g.setColor(Color.WHITE);
+        g.drawString(nameInput.toString() + (tickCount % 60 < 30 ? "|" : ""), W/2 - 188, 201);
+
+        g.setFont(new Font("Arial", Font.BOLD, 15));
+        g.setColor(new Color(200, 230, 160));
+        g.drawString("Choose Your Skin:", W/2 - 200, 248);
+
+        int skinBoxW = 120, skinBoxH = 130;
+        int cols = 4, rows = (editableSkins.length + cols - 1) / cols;
+        int startX = W/2 - (cols * skinBoxW + (cols - 1) * 10) / 2;
+        int startY = 265;
+        for (int i = 0; i < editableSkins.length; i++) {
+            int col = i % cols, row = i / cols;
+            int bx = startX + col * (skinBoxW + 10);
+            int by = startY + row * (skinBoxH + 15);
+            skinRects[i] = new Rectangle(bx, by, skinBoxW, skinBoxH);
+            boolean owned = playerData.ownsSkin(editableSkins[i]);
+            boolean sel = i == selectedSkinIndex;
+            if (sel) {
+                g.setColor(new Color(120, 220, 80, 40));
+                g.fillRoundRect(bx - 4, by - 4, skinBoxW + 8, skinBoxH + 8, 14, 14);
+            }
+            g.setColor(sel ? new Color(80, 160, 60, 210) : owned ? new Color(40, 80, 30, 190) : new Color(20, 40, 20, 150));
+            g.fillRoundRect(bx, by, skinBoxW, skinBoxH, 12, 12);
+            g.setColor(sel ? new Color(150, 235, 100) : owned ? new Color(70, 130, 60) : new Color(50, 70, 50));
+            g.setStroke(new BasicStroke(sel ? 3f : 1.5f));
+            g.drawRoundRect(bx, by, skinBoxW, skinBoxH, 12, 12);
+            g.setStroke(new BasicStroke(1f));
+            g.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 40));
+            FontMetrics emf = g.getFontMetrics();
+            String emoji = editableSkins[i].getEmoji();
+            g.drawString(emoji, bx + (skinBoxW - emf.stringWidth(emoji)) / 2, by + 55);
+            g.setFont(new Font("Arial", Font.BOLD, 11));
+            g.setColor(owned ? new Color(200, 240, 170) : new Color(150, 150, 150));
+            FontMetrics sfm = g.getFontMetrics();
+            String sn = editableSkins[i].getDisplayName();
+            g.drawString(sn, bx + (skinBoxW - sfm.stringWidth(sn)) / 2, by + 90);
+            if (!owned) {
+                g.setColor(new Color(255, 100, 100, 150));
+                g.setFont(new Font("Arial", Font.BOLD, 10));
+                g.drawString("LOCKED", bx + (skinBoxW - sfm.stringWidth("LOCKED")) / 2, by + 105);
+            }
+        }
+
+        boolean canSave = nameInput.length() > 0 && playerData.ownsSkin(editableSkins[selectedSkinIndex]);
+        GradientPaint startGrad = new GradientPaint(W/2 - 130, 488,
+            canSave ? new Color(90, 200, 65) : new Color(60, 80, 50),
+            W/2 - 130, 540,
+            canSave ? new Color(55, 140, 38) : new Color(40, 55, 35));
+        g.setPaint(startGrad);
+        g.fillRoundRect(W/2 - 130, 488, 260, 50, 12, 12);
+        g.setPaint(null);
+        g.setColor(canSave ? new Color(130, 235, 100) : new Color(80, 120, 70));
+        g.setStroke(new BasicStroke(2f));
+        g.drawRoundRect(W/2 - 130, 488, 260, 50, 12, 12);
+        g.setStroke(new BasicStroke(1f));
+        g.setFont(new Font("Arial Black", Font.BOLD, 17));
+        g.setColor(canSave ? Color.WHITE : new Color(120, 150, 110));
+        String btnText = "Save Changes 🌾";
         FontMetrics bfm = g.getFontMetrics();
         g.drawString(btnText, W/2 - bfm.stringWidth(btnText) / 2, 521);
 
@@ -1392,6 +1816,14 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
             if      (code == KeyEvent.VK_BACK_SPACE && nameInput.length() > 0) nameInput.deleteCharAt(nameInput.length() - 1);
             else if (code == KeyEvent.VK_ENTER && nameInput.length() > 0)      beginGame();
             else if (code == KeyEvent.VK_ESCAPE) screen = GameScreen.MAIN_MENU;
+        } else if (screen == GameScreen.EDIT_FARMER) {
+            if      (code == KeyEvent.VK_BACK_SPACE && nameInput.length() > 0) nameInput.deleteCharAt(nameInput.length() - 1);
+            else if (code == KeyEvent.VK_ENTER && nameInput.length() > 0 && playerData.ownsSkin(editableSkins[selectedSkinIndex])) {
+                playerData.equipSkin(editableSkins[selectedSkinIndex]);
+                playerData.setFarmerName(nameInput.toString());
+                screen = GameScreen.MAIN_MENU;
+            }
+            else if (code == KeyEvent.VK_ESCAPE) screen = GameScreen.MAIN_MENU;
         } else if (screen == GameScreen.GAME_OVER) {
             if (code == KeyEvent.VK_BACK_SPACE && pendingLeaderboardName.length() > 0)
                 pendingLeaderboardName = pendingLeaderboardName.substring(0, pendingLeaderboardName.length() - 1);
@@ -1403,6 +1835,8 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
         char c = e.getKeyChar();
         if (screen == GameScreen.CHARACTER_CREATION) {
             if (c >= 32 && c < 127 && nameInput.length() < 16) nameInput.append(c);
+        } else if (screen == GameScreen.EDIT_FARMER) {
+            if (c >= 32 && c < 127 && nameInput.length() < 16) nameInput.append(c);
         } else if (screen == GameScreen.GAME_OVER) {
             if (c >= 32 && c < 127 && pendingLeaderboardName.length() < 16) pendingLeaderboardName += c;
         }
@@ -1413,11 +1847,27 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
     @Override
     public void mouseMoved(MouseEvent e) {
         int mx = e.getX(), my = e.getY();
-        if (screen == GameScreen.GAME && mx < ARENA_W) basket.setTargetX(mx);
-        hoveredButton = -1;
-        if (menuButtons != null) {
-            for (int i = 0; i < menuButtons.length; i++) {
-                if (menuButtons[i] != null && menuButtons[i].contains(mx, my)) { hoveredButton = i; break; }
+        if (screen == GameScreen.GAME) {
+            if (mx < ARENA_W) basket.setTargetX(mx);
+            gameHoveredButton = -1;
+            if (gameButtons != null) {
+                for (int i = 0; i < gameButtons.length; i++) {
+                    if (gameButtons[i] != null && gameButtons[i].contains(mx, my)) { gameHoveredButton = i; break; }
+                }
+            }
+        } else if (screen == GameScreen.EDIT_FARMER) {
+            selectedSkinIndex = -1;
+            if (skinRects != null) {
+                for (int i = 0; i < skinRects.length; i++) {
+                    if (skinRects[i] != null && skinRects[i].contains(mx, my)) { selectedSkinIndex = i; break; }
+                }
+            }
+        } else {
+            hoveredButton = -1;
+            if (menuButtons != null) {
+                for (int i = 0; i < menuButtons.length; i++) {
+                    if (menuButtons[i] != null && menuButtons[i].contains(mx, my)) { hoveredButton = i; break; }
+                }
             }
         }
     }
@@ -1429,14 +1879,16 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
         switch (screen) {
             case MAIN_MENU:
                 if (menuButtons == null) return;
+                boolean hasFarmer = playerData.getFarmerName() != null && !playerData.getFarmerName().isEmpty();
                 for (int i = 0; i < menuButtons.length; i++) {
                     if (menuButtons[i] != null && menuButtons[i].contains(mx, my)) {
                         switch (i) {
-                            case 0: screen = GameScreen.CHARACTER_CREATION; break;
+                            case 0: if (hasFarmer) startNewGame(); else screen = GameScreen.CHARACTER_CREATION; break;
                             case 1: screen = GameScreen.LEADERBOARD;        break;
                             case 2: screen = GameScreen.WARDROBE;           break;
                             case 3: screen = GameScreen.FARM_UPGRADE;       break;
                             case 4: screen = GameScreen.ACHIEVEMENTS;       break;
+                            case 5: screen = GameScreen.EDIT_FARMER;        break;
                         }
                     }
                 }
@@ -1450,6 +1902,19 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
                 }
                 if (new Rectangle(W/2 - 130, 490, 260, 50).contains(mx, my) && nameInput.length() > 0) beginGame();
                 if (my > 530 && mx < 220) screen = GameScreen.MAIN_MENU;
+                break;
+            case EDIT_FARMER:
+                if (skinRects != null) {
+                    for (int i = 0; i < skinRects.length; i++) {
+                        if (skinRects[i] != null && skinRects[i].contains(mx, my)) selectedSkinIndex = i;
+                    }
+                }
+                if (saveButton != null && saveButton.contains(mx, my) && nameInput.length() > 0 && selectedSkinIndex >= 0 && playerData.ownsSkin(editableSkins[selectedSkinIndex])) {
+                    playerData.equipSkin(editableSkins[selectedSkinIndex]);
+                    playerData.setFarmerName(nameInput.toString());
+                    screen = GameScreen.MAIN_MENU;
+                }
+                if (backButton != null && backButton.contains(mx, my)) screen = GameScreen.MAIN_MENU;
                 break;
             case PAUSED:
                 if (menuButtons == null) return;
@@ -1496,6 +1961,15 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseMot
                 break;
             case GAME:
                 if (mx > ARENA_W) {
+                    if (gameButtons != null) {
+                        if (gameButtons.length > 0 && gameButtons[0] != null && gameButtons[0].contains(mx, my)) {
+                            showToast("🪙 Wallet: " + playerData.getTotalCoins() + " coins");
+                        } else if (gameButtons.length > 1 && gameButtons[1] != null && gameButtons[1].contains(mx, my)) {
+                            screen = GameScreen.WARDROBE;
+                        } else if (gameButtons.length > 2 && gameButtons[2] != null && gameButtons[2].contains(mx, my)) {
+                            screen = GameScreen.MAIN_MENU;
+                        }
+                    }
                     if (new Rectangle(ARENA_W + 15, H - 65, 60, 32).contains(mx, my)) sound.toggleMute();
                     if (new Rectangle(ARENA_W + 85, H - 65, 60, 32).contains(mx, my)) screen = GameScreen.PAUSED;
                 }

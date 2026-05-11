@@ -1,7 +1,15 @@
+<<<<<<< HEAD
 coins=210
 farmStage=5
 equippedSkin=FARMER_FEMALE
 equippedBasket=WOVEN
+=======
+coins=3306
+farmStage=6
+equippedSkin=FARMER_MALE
+equippedBasket=METAL
+>>>>>>> 1ab3de00fee0d337bccc8ac9bb55370477b7710b
 ownedSkins=FARMER_MALE
-ownedBaskets=WOVEN
+ownedBaskets=WOVEN,METAL
 achievements=first_harvest,on_fire,rich_farmer,speed_farmer
+farmerName=
