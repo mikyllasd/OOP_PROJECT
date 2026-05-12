@@ -21,7 +21,6 @@ public class MainMenuScreen extends Screen {
         "Wardrobe",
         "Farm Upgrade",
         "Achievements",
-        "Settings",
         "Stats"
     };
 
@@ -147,12 +146,12 @@ public class MainMenuScreen extends Screen {
 
         // Main title
         g.setColor(ColorPalette.TEXT_GOLD);
-        g.drawString("Catch the Ball!",
-                (GamePanel.W - g.getFontMetrics().stringWidth("Catch the Ball!")) / 2,
+        g.drawString("Catch the Harvest!",
+                (GamePanel.W - g.getFontMetrics().stringWidth("Catch the Harvest!")) / 2,
                 (int)(125 + bobY));
 
         // Subtitle
-        RenderUtils.drawCenteredText(g, "A farm-fresh catching adventure!",
+        RenderUtils.drawCenteredText(g, "A rustic farm chase with fruit, bonuses, and charm.",
                 GamePanel.W / 2, 158,
                 FontManager.getBody(16, Font.ITALIC),
                 new Color(200, 255, 160, 200));
@@ -221,8 +220,7 @@ public class MainMenuScreen extends Screen {
                     case 2: panel.switchToWithFade(GameScreenType.WARDROBE);           break;
                     case 3: panel.switchToWithFade(GameScreenType.FARM_UPGRADE);       break;
                     case 4: panel.switchToWithFade(GameScreenType.ACHIEVEMENTS);       break;
-                    case 5: panel.switchToWithFade(GameScreenType.SETTINGS);           break;
-                    case 6: panel.switchToWithFade(GameScreenType.STATS);              break;
+                    case 5: panel.switchToWithFade(GameScreenType.STATS);              break;
                 }
                 return;
             }

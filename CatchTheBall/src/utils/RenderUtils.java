@@ -1,5 +1,6 @@
 package OOP_PROJECT.CatchTheBall.src.utils;
 
+import OOP_PROJECT.CatchTheBall.src.managers.GamePanel;
 import java.awt.*;
 
 public class RenderUtils {
@@ -112,6 +113,27 @@ public class RenderUtils {
     g.drawString(label,r.x+(r.width-fm.stringWidth(label))/2,
             r.y+r.height/2+fm.getAscent()/2-2);
 }
+
+    public static Rectangle getSettingsIconBounds() {
+        return new Rectangle(GamePanel.W - 52, 14, 40, 40);
+    }
+
+    public static void drawSettingsIcon(Graphics2D g, boolean hovered) {
+        Rectangle r = getSettingsIconBounds();
+        Color bg = hovered ? new Color(120, 220, 90) : new Color(70, 140, 60);
+        GradientPaint gp = new GradientPaint(r.x, r.y, bg.brighter(), r.x, r.y + r.height, bg.darker());
+        g.setPaint(gp);
+        g.fillRoundRect(r.x, r.y, r.width, r.height, 12, 12);
+        g.setPaint(null);
+        g.setColor(new Color(255, 255, 255, hovered ? 220 : 180));
+        g.setStroke(new BasicStroke(1.8f));
+        g.drawRoundRect(r.x, r.y, r.width, r.height, 12, 12);
+        g.setStroke(new BasicStroke(1f));
+        g.setFont(FontManager.getEmoji(20));
+        FontMetrics fm = g.getFontMetrics();
+        String icon = "\u2699\uFE0F";
+        g.drawString(icon, r.x + (r.width - fm.stringWidth(icon)) / 2, r.y + r.height / 2 + fm.getAscent() / 2 - 3);
+    }
 
     private RenderUtils() {}
 }

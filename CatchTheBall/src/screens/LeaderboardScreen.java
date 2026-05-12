@@ -1,6 +1,7 @@
 package OOP_PROJECT.CatchTheBall.src.screens;
 
 import OOP_PROJECT.CatchTheBall.src.core.Screen;
+import OOP_PROJECT.CatchTheBall.src.enums.Difficulty;
 import OOP_PROJECT.CatchTheBall.src.enums.GameScreenType;
 import OOP_PROJECT.CatchTheBall.src.managers.GamePanel;
 import OOP_PROJECT.CatchTheBall.src.models.ScoreEntry;
@@ -13,7 +14,9 @@ import java.util.List;
 public class LeaderboardScreen extends Screen {
     private Rectangle backBtn;
     private Rectangle refreshBtn;
+    private Rectangle[] filterBtns;
     private int    hovered      = -1;
+    private int    selectedFilter = 0;
     private int    scrollOffset = 0;
     private String statusMsg    = "";
     private int    statusTimer  = 0;
@@ -38,9 +41,20 @@ public class LeaderboardScreen extends Screen {
         g.fillRect(0,0,GamePanel.W,GamePanel.H); g.setPaint(null);
         RenderUtils.drawHeaderBar(g,GamePanel.W,"\uD83C\uDFC6 Leaderboard");
 
-        List<ScoreEntry> top=panel.getScoreManager().getAll();
+        String[] filterLabels = {"All","Easy","Normal","Hard"};
+        filterBtns = new Rectangle[filterLabels.length];
+        int fx = 24;
+        for (int i = 0; i < filterLabels.length; i++) {
+            filterBtns[i] = new Rectangle(fx, 78, 90, 30);
+            RenderUtils.drawButton(g, filterBtns[i], filterLabels[i], selectedFilter == i,
+                    FontManager.getBodyBold(13));
+            fx += 100;
+        }
+
+        List<ScoreEntry> top = selectedFilter == 0 ? panel.getScoreManager().getAll()
+                : panel.getScoreManager().getTopByDifficulty(filterLabels[selectedFilter]);
         if (top.isEmpty()) {
-            RenderUtils.drawCenteredText(g,"No scores yet. Play to get on the board!",
+            RenderUtils.drawCenteredText(g,"No scores yet for " + filterLabels[selectedFilter] + ".",
                     GamePanel.W/2,300,FontManager.getBody(17,Font.ITALIC),new Color(155,200,135));
         }
 
@@ -94,6 +108,10 @@ public class LeaderboardScreen extends Screen {
         hovered=-1;
         if (backBtn!=null&&backBtn.contains(e.getX(),e.getY()))       hovered=0;
         if (refreshBtn!=null&&refreshBtn.contains(e.getX(),e.getY())) hovered=1;
+        if (filterBtns != null) {
+            for (int i=0; i<filterBtns.length; i++)
+                if (filterBtns[i].contains(e.getX(),e.getY())) { hovered=2+i; break; }
+        }
     }
 
     @Override
@@ -103,6 +121,15 @@ public class LeaderboardScreen extends Screen {
         if (refreshBtn!=null&&refreshBtn.contains(e.getX(),e.getY())) {
             panel.getScoreManager().load();
             statusMsg="Refreshed!"; statusTimer=100;
+        }
+        if (filterBtns != null) {
+            for (int i=0; i<filterBtns.length; i++) {
+                if (filterBtns[i].contains(e.getX(), e.getY())) {
+                    selectedFilter = i;
+                    scrollOffset = 0;
+                    return;
+                }
+            }
         }
     }
 

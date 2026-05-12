@@ -26,12 +26,16 @@ public class SidebarRenderer {
         Font valF   = FontManager.getBodyBold(22);
 
         int py = 20;
+        drawItem(g, sx+12, py, "DIFFICULTY", state.getDifficulty().getDisplayName(),
+                new Color(220,190,80), titleF, valF); py += 52;
         drawItem(g, sx+12, py, "LEVEL",  ""+state.getLevel(),
                 new Color(255,228,80), titleF, valF); py += 58;
         drawItem(g, sx+12, py, "SCORE",  ""+state.getScore(),
                 new Color(100,228,255), titleF, valF); py += 58;
         drawItem(g, sx+12, py, "TARGET", ""+state.getLevelTarget(),
                 new Color(200,200,200), titleF, FontManager.getBodyBold(16)); py += 48;
+        drawItem(g, sx+12, py, "LIVES",  "❤️ x"+state.getLives(),
+                new Color(255,120,120), titleF, valF); py += 52;
 
        boolean pulse = state.getTimeLeft() <= 60 && tickCount % 30 < 15;
 Color tc = state.getTimeLeft() <= 60 ? new Color(255,80,80) : new Color(100,255,150);

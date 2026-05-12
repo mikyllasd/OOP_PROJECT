@@ -141,6 +141,16 @@ public class GameScreen extends Screen {
             }
             bi.remove();
         } else if (b.isActive() && b.intersects(basket)) {
+            if (b.getType().isBad()) {
+                Rectangle catchZone = new Rectangle(
+                        (int)basket.getX() + 8,
+                        (int)basket.getY() + 6,
+                        basket.getWidth() - 16,
+                        basket.getHeight() - 12);
+                Point center = new Point((int)(b.getX() + b.getWidth() / 2f),
+                        (int)(b.getY() + b.getHeight() / 2f));
+                if (!catchZone.contains(center)) continue;
+            }
             b.setActive(false);
             handleCatch(b);
             b.triggerCatch();
@@ -185,6 +195,12 @@ public class GameScreen extends Screen {
                 particles.spawnShockwave((int)b.getX(),(int)b.getY(),new Color(80,180,255));
                 basket.triggerCatch(); character.triggerCatch();
             } else {
+                state.loseLife();
+                if (state.getLives() <= 0) {
+                    showToast("\uD83D\uDEAB Out of lives!");
+                    endGame();
+                    return;
+                }
                 state.addScore(Math.max(-state.getScore(),(int)(pts*difficulty.getPenaltyMultiplier()/-20f)));
                 screenShakeTimer=8; basket.triggerShake(); character.triggerShake(); state.resetCombo();
                 panel.getSoundManager().playBadCatch();
@@ -192,6 +208,10 @@ public class GameScreen extends Screen {
                 particles.spawnFloatingText((int)b.getX(),(int)b.getY(),""+pts,ColorPalette.TEXT_BAD_CATCH);
             }
         } else {
+            if (type == BallType.GOLDEN_APPLE) {
+                state.addLife();
+                showToast("\uD83C\uDF4E Golden Apple! +1 life");
+            }
             state.incrementBallsCaught(); state.incrementCombo();
             int c=state.getCombo(); float mult=1f;
             if      (c>=12) mult=5f;
@@ -464,9 +484,26 @@ public class GameScreen extends Screen {
         }
         int mx=e.getX(),my=e.getY();
         if (mx>GamePanel.ARENA_W) {
-            if (new Rectangle(GamePanel.ARENA_W+15,GamePanel.H-65,60,32).contains(mx,my)) panel.getSoundManager().toggleMute();
-            if (new Rectangle(GamePanel.ARENA_W+85,GamePanel.H-65,60,32).contains(mx,my)) panel.getScreenManager().switchTo(GameScreenType.PAUSED);
+            int buttonY = getSidebarIconButtonY();
+            if (new Rectangle(GamePanel.ARENA_W+15, buttonY, 60, 32).contains(mx,my))
+                panel.getSoundManager().toggleMute();
+            if (new Rectangle(GamePanel.ARENA_W+85, buttonY, 60, 32).contains(mx,my))
+                panel.getScreenManager().switchTo(GameScreenType.PAUSED);
         }
+    }
+
+    private int getSidebarIconButtonY() {
+        int py = 20;
+        py += 58; // LEVEL
+        py += 58; // SCORE
+        py += 48; // TARGET
+        py += 62; // TIME
+        py += 52; // COINS
+        if (state.getCombo() > 0) py += 58;
+        py += 30; // LEVEL PROGRESS
+        py += 30; // ACTIVE POWER-UPS
+        py += 66; // FARM
+        return py;
     }
 
     public void setPlayerName(String n)    { playerName=n; }
