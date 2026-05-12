@@ -1,0 +1,15 @@
+package game.ui;
+
+public enum GameScreen {
+    MAIN_MENU,
+    CHARACTER_CREATION,
+    EDIT_FARMER,
+    GAME,
+    PAUSED,
+    WARDROBE,
+    FARM_UPGRADE,
+    ACHIEVEMENTS,
+    GAME_OVER,
+    LEADERBOARD
+}
+
