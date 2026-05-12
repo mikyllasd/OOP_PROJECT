@@ -655,8 +655,11 @@ public class SidebarRenderer {
     // ── divider ───────────────────────────────────────────────────────────────
 
     private static void drawDivider(Graphics2D g, int sx, int py, int sw) {
-        g.setPaint(new GradientPaint(sx + 10, py, new Color(0, 0, 0, 0),
-                sx + sw / 2, py, DIVIDER, sx + sw - 10, py, new Color(0, 0, 0, 0)));
+        g.setPaint(new LinearGradientPaint(
+                sx + 10, py, sx + sw - 10, py,
+                new float[] { 0f, 0.5f, 1f },
+                new Color[]  { new Color(0, 0, 0, 0), DIVIDER, new Color(0, 0, 0, 0) }
+        ));
         g.setStroke(new BasicStroke(1f));
         g.drawLine(sx + 10, py, sx + sw - 10, py);
         g.setStroke(new BasicStroke(1f));

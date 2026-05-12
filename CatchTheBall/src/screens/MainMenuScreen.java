@@ -87,21 +87,11 @@ public class MainMenuScreen extends Screen {
 
     @Override
     public void draw(Graphics2D g) {
-        // ── 1. Animated farm background ──────────────────────────────────────
         MenuBackgroundRenderer.draw(g, tickCount, GamePanel.W, GamePanel.H);
-
-        // ── 2. Falling fruit particles (translucent, above background) ───────
         drawFallingFruits(g);
-
-        // ── 3. Dark vignette so UI pops against the busy background ──────────
-        drawVignette(g);
-
-        // ── 4. UI layer ───────────────────────────────────────────────────────
         drawTitle(g);
         drawButtons(g);
         drawBottomBar(g);
-
-        // ── 5. Exit button ────────────────────────────────────────────────────
         exitBtn = new Rectangle(GamePanel.W - 150, GamePanel.H - 50, 130, 34);
         RenderUtils.drawExitButton(g, exitBtn, hovered == 9998);
     }
