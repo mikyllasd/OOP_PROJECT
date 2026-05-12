@@ -1,4 +1,5 @@
-package OOP_PROJECT.CatchTheBall.src.renderers;
+// This file should be renamed to MenuBackgroundRenderer.java and the class name should match the file name.
+// package OOP_PROJECT.CatchTheBall.src.renderers;
 
 import java.awt.*;
 import java.awt.geom.*;
@@ -627,15 +628,6 @@ public class MenuBackgroundRenderer {
     }
 
     // ── utility ───────────────────────────────────────────────────────────────
-
-    private static Color blend(Color a, Color b, float t) {
-        int r = (int)(a.getRed()   + (b.getRed()   - a.getRed())   * t);
-        int gv = (int)(a.getGreen() + (b.getGreen() - a.getGreen()) * t);
-        int bl = (int)(a.getBlue()  + (b.getBlue()  - a.getBlue())  * t);
-        return new Color(clamp(r), clamp(gv), clamp(bl));
-    }
-
-    private static int clamp(int v) { return Math.max(0, Math.min(255, v)); }
 
     private MenuBackgroundRenderer() {}
 }
