@@ -1,5 +1,4 @@
-// This file should be renamed to MenuBackgroundRenderer.java and the class name should match the file name.
-// package OOP_PROJECT.CatchTheBall.src.renderers;
+package OOP_PROJECT.CatchTheBall.src.renderers;
 
 import java.awt.*;
 import java.awt.geom.*;

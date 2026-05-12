@@ -12,6 +12,7 @@ import OOP_PROJECT.CatchTheBall.src.models.Achievement;
 import OOP_PROJECT.CatchTheBall.src.models.FarmProgression;
 import OOP_PROJECT.CatchTheBall.src.models.GameState;
 import OOP_PROJECT.CatchTheBall.src.renderers.BackgroundRenderer;
+import OOP_PROJECT.CatchTheBall.src.renderers.MenuBackgroundRenderer;
 import OOP_PROJECT.CatchTheBall.src.renderers.SidebarRenderer;
 import OOP_PROJECT.CatchTheBall.src.utils.*;
 import java.awt.*;
@@ -483,26 +484,37 @@ public class GameScreen extends Screen {
             return;
         }
         int mx=e.getX(),my=e.getY();
-        if (mx>GamePanel.ARENA_W) {
+        if (mx > GamePanel.ARENA_W) {
             int buttonY = getSidebarIconButtonY();
-            if (new Rectangle(GamePanel.ARENA_W+15, buttonY, 60, 32).contains(mx,my))
+            int bw = (GamePanel.SIDEBAR_W - 24) / 2;
+
+            // SOUND button
+            if (new Rectangle(GamePanel.ARENA_W + 8, buttonY, bw, 32).contains(mx, my))
                 panel.getSoundManager().toggleMute();
-            if (new Rectangle(GamePanel.ARENA_W+85, buttonY, 60, 32).contains(mx,my))
+
+            // PAUSE button
+            if (new Rectangle(GamePanel.ARENA_W + 12 + bw, buttonY, bw, 32).contains(mx, my))
                 panel.getScreenManager().switchTo(GameScreenType.PAUSED);
         }
     }
 
     private int getSidebarIconButtonY() {
-        int py = 20;
-        py += 58; // LEVEL
-        py += 58; // SCORE
-        py += 48; // TARGET
-        py += 62; // TIME
-        py += 52; // COINS
-        if (state.getCombo() > 0) py += 58;
-        py += 30; // LEVEL PROGRESS
-        py += 30; // ACTIVE POWER-UPS
-        py += 66; // FARM
+        int py = 62; // header banner height
+
+        py += 48 + 5;  // DIFFICULTY card
+        py += 48 + 5;  // LEVEL card
+        py += 48 + 5;  // SCORE card
+        py += 52 + 5;  // TARGET card
+        py += 50 + 5;  // LIVES card
+        py += 56 + 5;  // TIMER card
+        py += 48 + 5;  // COINS card
+        if (state.getCombo() > 0) py += 50 + 5; // COMBO card
+
+        py += 12;      // divider
+        py += 38;      // progress section
+        py += 40;      // power-ups section
+        py += 72;      // farm badge
+
         return py;
     }
 
