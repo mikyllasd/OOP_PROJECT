@@ -413,27 +413,61 @@ public class GameScreen extends Screen {
     }
 
     private void drawTutorial(Graphics2D g) {
-        g.setColor(new Color(0,0,0,180)); g.fillRect(0,0,GamePanel.W,GamePanel.H);
-        int pw=520,ph=300,px=(GamePanel.W-pw)/2,py=(GamePanel.H-ph)/2;
+        g.setColor(new Color(0,0,0,180));
+        g.fillRect(0,0,GamePanel.W,GamePanel.H);
+
+        int pw=520, ph=320, px=(GamePanel.W-pw)/2, py=(GamePanel.H-ph)/2;
         RenderUtils.drawGradientPanel(g,px,py,pw,ph,
                 new Color(24,60,16,245),new Color(12,40,8,245),new Color(100,200,70),2f,20);
-        String[] titles={"Move the Basket","Good vs Bad Fruits","Power-Ups","Combos & Multipliers","Coins & Shop"};
-        String[] bodies={
-            "Move your mouse or A/D keys to move the basket and catch falling fruits!",
-            "Green fruits (Apple, Orange) = GOOD! Red fruits (Mushroom, Bomb) = BAD! Avoid bad ones!",
-            "Glowing power-ups grant shields, magnets, time bonuses, double points and more!",
-            "Catch in a row for combo multipliers: x2, x3, x4, x5 - go for LEGENDARY x5!",
-            "Earn coins every catch. Spend them in the Wardrobe for skins and baskets!"
+
+        String[] titles={
+            "Move the Basket",
+            "Good vs Bad Fruits",
+            "Power-Ups",
+            "Combos & Multipliers",
+            "Coins & Shop"
         };
-        RenderUtils.drawCenteredText(g,"Tutorial ("+(tutorialStep+1)+"/5)",
-                px+pw/2,py+35,FontManager.getBold(16),ColorPalette.TEXT_GOLD);
-        RenderUtils.drawCenteredText(g,titles[tutorialStep],
-                px+pw/2,py+80,FontManager.getBold(20),Color.WHITE);
-        RenderUtils.drawCenteredText(g,bodies[tutorialStep],
-                px+pw/2,py+130,FontManager.getBody(14),new Color(200,240,170));
-        RenderUtils.drawButton(g,new Rectangle(px+pw-140,py+ph-55,120,38),
-                tutorialStep<4?"Next \u2192":"Start! \uD83C\uDF3E",true,FontManager.getBold(13));
-        RenderUtils.drawButton(g,new Rectangle(px+20,py+ph-55,80,38),"Skip",false,FontManager.getBold(13));
+        String[] bodies={
+            "Move your mouse or A/D keys\nto move the basket and catch\nfalling fruits!",
+            "Green fruits (Apple, Orange) = GOOD!\nRed fruits (Mushroom, Bomb) = BAD!\nAvoid bad ones!",
+            "Glowing power-ups grant shields,\nmagnets, time bonuses, double\npoints and more!",
+            "Catch in a row for combo multipliers:\nx2, x3, x4, x5\nGo for LEGENDARY x5!",
+            "Earn coins every catch.\nSpend them in the Wardrobe\nfor skins and baskets!"
+        };
+
+        // Step counter
+        RenderUtils.drawCenteredText(g, "Tutorial ("+(tutorialStep+1)+"/5)",
+                px+pw/2, py+35, FontManager.getBold(14), ColorPalette.TEXT_GOLD);
+
+        // Title
+        RenderUtils.drawCenteredText(g, titles[tutorialStep],
+                px+pw/2, py+70, FontManager.getBold(20), Color.WHITE);
+
+        // Divider
+        g.setColor(new Color(100,200,70,80));
+        g.setStroke(new BasicStroke(1f));
+        g.drawLine(px+30, py+85, px+pw-30, py+85);
+
+        // Body — draw each line separately
+        String[] lines = bodies[tutorialStep].split("\n");
+        Font bodyFont = FontManager.getBody(14);
+        g.setFont(bodyFont);
+        g.setColor(new Color(200,240,170));
+        FontMetrics fm = g.getFontMetrics();
+        int lineH = fm.getHeight() + 4;
+        int totalTextH = lines.length * lineH;
+        int startY = py + 85 + (ph - 85 - 60 - totalTextH) / 2 + fm.getAscent();
+        for (int i = 0; i < lines.length; i++) {
+            int lx = px + (pw - fm.stringWidth(lines[i])) / 2;
+            g.drawString(lines[i], lx, startY + i * lineH);
+        }
+
+        // Buttons
+        RenderUtils.drawButton(g, new Rectangle(px+pw-150, py+ph-55, 130, 38),
+                tutorialStep<4 ? "Next \u2192" : "Start! \uD83C\uDF3E",
+                true, FontManager.getBold(13));
+        RenderUtils.drawButton(g, new Rectangle(px+20, py+ph-55, 80, 38),
+                "Skip", false, FontManager.getBold(13));
     }
 
     private String getPowerUpToast(PowerUpType t) {
