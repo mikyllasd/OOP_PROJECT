@@ -47,9 +47,9 @@ public class BallSpawner {
         float x         = 30 + rand.nextFloat() * (arenaWidth - 70);
         float baseSpeed = 0.7f + level * 0.07f + rand.nextFloat() * 0.3f;
         float maxSpeed;
-        if      (diff == Difficulty.EASY)   maxSpeed = 2.2f;
-        else if (diff == Difficulty.NORMAL) maxSpeed = 3.8f;
-        else                                maxSpeed = 5.5f;
+        if      (diff == Difficulty.EASY)   maxSpeed = 5.5f;
+        else if (diff == Difficulty.NORMAL) maxSpeed = 8.5f;
+        else                                maxSpeed = 12.0f;
         float speed = Math.min(baseSpeed * diff.getSpeedMultiplier(), maxSpeed);
         return new Ball(x, -40, rollBallType(level, diff), speed);
     }
