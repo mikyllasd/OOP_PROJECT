@@ -33,6 +33,7 @@ public class SettingsScreen extends Screen {
         super.onEnter();
         sfxVolume   = panel.getSoundManager().getVolume();
         musicVolume = panel.getMusicManager().getVolume();
+        selectedDiff = panel.getPlayerData().getDefaultDifficulty().ordinal();
     }
 
     @Override public void update() { tickCount++; }
@@ -158,10 +159,12 @@ public class SettingsScreen extends Screen {
         if (draggingSFX) {
             sfxVolume=sliderValue(mx);
             panel.getSoundManager().setVolume(sfxVolume);
+            panel.getPlayerData().setSfxVolume(sfxVolume);
         }
         if (draggingMusic) {
             musicVolume=sliderValue(mx);
             panel.getMusicManager().setVolume(musicVolume);
+            panel.getPlayerData().setMusicVolume(musicVolume);
         }
     }
 
@@ -176,6 +179,7 @@ public class SettingsScreen extends Screen {
     public void onMouseReleased(MouseEvent e) {
         draggingSFX=false;
         draggingMusic=false;
+        panel.getPlayerData().save();
     }
 
     @Override
@@ -185,14 +189,22 @@ public class SettingsScreen extends Screen {
             panel.switchToWithFade(GameScreenType.MAIN_MENU); return;
         }
         if (muteBtn!=null&&muteBtn.contains(mx,my)) {
-            panel.getSoundManager().toggleMute(); return;
+            panel.getSoundManager().toggleMute();
+            panel.getPlayerData().setSfxMuted(panel.getSoundManager().isMuted());
+            return;
         }
         if (muteMusicBtn!=null&&muteMusicBtn.contains(mx,my)) {
-            panel.getMusicManager().toggleMute(); return;
+            panel.getMusicManager().toggleMute();
+            panel.getPlayerData().setMusicMuted(panel.getMusicManager().isMuted());
+            return;
         }
         if (diffBtns!=null)
             for (int i=0;i<diffBtns.length;i++)
-                if (diffBtns[i].contains(mx,my)) { selectedDiff=i; return; }
+                if (diffBtns[i].contains(mx,my)) {
+                    selectedDiff=i;
+                    panel.getPlayerData().setDefaultDifficulty(Difficulty.values()[i]);
+                    return;
+                }
         int panelX=GamePanel.W/2-280;
         if (new Rectangle(panelX+30,444,250,38).contains(mx,my)) {
             panel.switchToWithFade(GameScreenType.ACCOUNT_SELECT); return;

@@ -45,6 +45,10 @@ public class GamePanel extends JPanel implements Runnable {
         soundManager       = new SoundManager();
         musicManager       = new MusicManager();
         playerData         = new PlayerData();
+        soundManager.setVolume(playerData.getSfxVolume());
+        soundManager.setMuted(playerData.isSfxMuted());
+        musicManager.setVolume(playerData.getMusicVolume());
+        musicManager.setMuted(playerData.isMusicMuted());
         scoreManager       = new ScoreManager();
         achievementManager = new AchievementManager();
         screenManager      = new ScreenManager(this);

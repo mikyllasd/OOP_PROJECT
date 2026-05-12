@@ -9,6 +9,7 @@ public class GameState {
     private int     highestCombo;
     private float   comboMultiplier;
     private int     timeLeft;
+    private int     lives;
     private int     coinsThisGame;
     private int     ballsCaughtThisGame;
     private boolean shieldActive;
@@ -43,6 +44,7 @@ public class GameState {
         highestCombo        = 0;
         comboMultiplier     = 1f;
         timeLeft            = difficulty.getStartingTime();
+        lives               = difficulty.getStartingLives();
         coinsThisGame       = 0;
         ballsCaughtThisGame = 0;
         shieldActive        = false;
@@ -70,6 +72,10 @@ public class GameState {
     public void decrementTime()        { if (timeLeft > 0) timeLeft--; }
     public void addTime(int s)         { timeLeft += s; }
     public void levelUp()              { level++; timeLeft += 10; }
+    public void addLife()              { lives = Math.min(lives + 1, difficulty.getStartingLives() + 2); }
+    public void loseLife()             { lives = Math.max(0, lives - 1); }
+
+    public int  getLives()             { return lives; }
 
     public int     getScore()               { return score; }
     public int     getLevel()               { return level; }

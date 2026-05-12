@@ -1,7 +1,9 @@
 package OOP_PROJECT.CatchTheBall.src.managers;
 
 import OOP_PROJECT.CatchTheBall.src.screens.ScreenManager;
+import OOP_PROJECT.CatchTheBall.src.utils.RenderUtils;
 
+import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
 
@@ -41,7 +43,16 @@ public class InputManager implements KeyListener, MouseMotionListener, MouseList
     }
 
     @Override public void mouseDragged(MouseEvent e)  { mouseMoved(e); }
-    @Override public void mouseClicked(MouseEvent e)  { screenManager.getCurrentScreen().onMouseClicked(translate(e)); }
+    @Override public void mouseClicked(MouseEvent e)  {
+        MouseEvent translated = translate(e);
+        if (RenderUtils.getSettingsIconBounds().contains(translated.getX(), translated.getY())) {
+            if (screenManager.getCurrentType() != OOP_PROJECT.CatchTheBall.src.enums.GameScreenType.SETTINGS) {
+                screenManager.switchTo(OOP_PROJECT.CatchTheBall.src.enums.GameScreenType.SETTINGS);
+            }
+            return;
+        }
+        screenManager.getCurrentScreen().onMouseClicked(translated);
+    }
     @Override public void mousePressed(MouseEvent e)  { screenManager.getCurrentScreen().onMousePressed(translate(e)); }
     @Override public void mouseReleased(MouseEvent e) { screenManager.getCurrentScreen().onMouseReleased(translate(e)); }
     @Override public void mouseEntered(MouseEvent e)  {}

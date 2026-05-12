@@ -27,7 +27,8 @@ public class CharacterCreationScreen extends Screen {
         nameInput.setLength(0);
         String pn = panel.getPlayerData().getProfile().getFarmerName();
         if (pn != null && !pn.equals("Farmer")) nameInput.append(pn);
-        selectedSkin = 0; selectedDiff = 1;
+        selectedSkin = 0;
+        selectedDiff = panel.getPlayerData().getDefaultDifficulty().ordinal();
     }
 
     @Override public void update() { tickCount++; }
@@ -44,7 +45,7 @@ public class CharacterCreationScreen extends Screen {
         RenderUtils.drawGradientPanel(g,GamePanel.W/2-310,40,620,580,
                 new Color(24,58,16,230),new Color(14,38,8,230),new Color(90,175,65),2f,22);
 
-        RenderUtils.drawCenteredText(g,"Create Your Farmer",
+        RenderUtils.drawCenteredText(g,"Create Your Farmhand",
                 GamePanel.W/2,95,FontManager.getBold(28),ColorPalette.TEXT_GOLD);
 
         drawNameField(g);

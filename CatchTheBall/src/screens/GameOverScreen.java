@@ -72,7 +72,9 @@ public class GameOverScreen extends Screen {
             int sy = py + 95;
             drawStat(g,px+30,sy,"Final Score",  ""+lastState.getScore());        sy+=34;
             drawStat(g,px+30,sy,"Level Reached",""+lastState.getLevel());         sy+=34;
+            drawStat(g,px+30,sy,"Difficulty",   lastState.getDifficulty().getDisplayName()); sy+=34;
             drawStat(g,px+30,sy,"Best Combo",   "x"+lastState.getHighestCombo()); sy+=34;
+            drawStat(g,px+30,sy,"Lives Left",   ""+lastState.getLives());         sy+=34;
             drawStat(g,px+30,sy,"Coins Earned", "+"+lastState.getCoinsThisGame()
                     +" \uD83E\uDE99");                                             sy+=34;
             drawStat(g,px+30,sy,"Balls Caught", ""+lastState.getBallsCaughtThisGame()); sy+=44;
