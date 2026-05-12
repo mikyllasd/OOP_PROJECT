@@ -33,7 +33,7 @@ public class FarmUpgradeScreen extends Screen {
     public void draw(Graphics2D g) {
         g.setPaint(new GradientPaint(0,0,new Color(28,58,18),0,GamePanel.H,new Color(12,38,8)));
         g.fillRect(0,0,GamePanel.W,GamePanel.H); g.setPaint(null);
-        RenderUtils.drawHeaderBar(g,GamePanel.W,"\uD83C\uDFE1 Farm Upgrade");
+        RenderUtils.drawHeaderBar(g, GamePanel.W, "Farm Upgrade");
         drawFarmDisplay(g);
         drawUpgradeSection(g);
         drawFarmStagesRow(g);
@@ -179,7 +179,7 @@ private void drawFarmStagesRow(Graphics2D g) {
             if (panel.getPlayerData().spendCoins(cost)) {
                 farm.upgrade();
                 panel.getPlayerData().setFarmStage(farm.getStage());
-                statusMsg="\uD83C\uDF89 Upgraded to Stage "+farm.getStage()+"!";
+                statusMsg = "Upgraded to Stage " + farm.getStage() + "!";
                 statusTimer=150;
             } else {
                 statusMsg="Not enough coins!"; statusTimer=120;

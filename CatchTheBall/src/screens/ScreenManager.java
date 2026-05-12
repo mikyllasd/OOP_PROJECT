@@ -3,7 +3,6 @@ package OOP_PROJECT.CatchTheBall.src.screens;
 import OOP_PROJECT.CatchTheBall.src.core.Screen;
 import OOP_PROJECT.CatchTheBall.src.enums.GameScreenType;
 import OOP_PROJECT.CatchTheBall.src.managers.GamePanel;
-import OOP_PROJECT.CatchTheBall.src.utils.RenderUtils;
 
 import java.awt.Graphics2D;
 import java.util.*;
@@ -42,14 +41,10 @@ public class ScreenManager {
         if (currentScreen != null) currentScreen.onEnter();
     }
 
-    public void update()           { if (currentScreen != null) currentScreen.update(); }
+    public void update() { if (currentScreen != null) currentScreen.update(); }
+
     public void draw(Graphics2D g) {
         if (currentScreen != null) currentScreen.draw(g);
-        boolean hover = false;
-        int mx = panel.getInputManager().getMouseX();
-        int my = panel.getInputManager().getMouseY();
-        if (RenderUtils.getSettingsIconBounds().contains(mx, my)) hover = true;
-        RenderUtils.drawSettingsIcon(g, hover);
     }
 
     public Screen         getCurrentScreen() { return currentScreen; }

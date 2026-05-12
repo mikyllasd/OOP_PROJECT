@@ -1,6 +1,5 @@
 package OOP_PROJECT.CatchTheBall.src.utils;
 
-import OOP_PROJECT.CatchTheBall.src.managers.GamePanel;
 import java.awt.*;
 
 public class RenderUtils {
@@ -96,43 +95,22 @@ public class RenderUtils {
     }
 
     public static void drawExitButton(Graphics2D g, Rectangle r, boolean hovered) {
-    Color bg     = hovered ? new Color(200,50,50) : new Color(150,35,35);
-    Color border = hovered ? new Color(255,100,100) : new Color(200,70,70);
-    GradientPaint gp = new GradientPaint(r.x,r.y,bg.brighter(),r.x,r.y+r.height,bg.darker());
-    g.setPaint(gp);
-    g.fillRoundRect(r.x,r.y,r.width,r.height,10,10);
-    g.setPaint(null);
-    g.setColor(border);
-    g.setStroke(new BasicStroke(hovered?2f:1.5f));
-    g.drawRoundRect(r.x,r.y,r.width,r.height,10,10);
-    g.setStroke(new BasicStroke(1f));
-    g.setFont(FontManager.getBold(13));
-    g.setColor(Color.WHITE);
-    FontMetrics fm=g.getFontMetrics();
-    String label="Exit Game";
-    g.drawString(label,r.x+(r.width-fm.stringWidth(label))/2,
-            r.y+r.height/2+fm.getAscent()/2-2);
-}
-
-    public static Rectangle getSettingsIconBounds() {
-        return new Rectangle(GamePanel.W - 52, 14, 40, 40);
-    }
-
-    public static void drawSettingsIcon(Graphics2D g, boolean hovered) {
-        Rectangle r = getSettingsIconBounds();
-        Color bg = hovered ? new Color(120, 220, 90) : new Color(70, 140, 60);
-        GradientPaint gp = new GradientPaint(r.x, r.y, bg.brighter(), r.x, r.y + r.height, bg.darker());
+        Color bg     = hovered ? new Color(200,50,50) : new Color(150,35,35);
+        Color border = hovered ? new Color(255,100,100) : new Color(200,70,70);
+        GradientPaint gp = new GradientPaint(r.x,r.y,bg.brighter(),r.x,r.y+r.height,bg.darker());
         g.setPaint(gp);
-        g.fillRoundRect(r.x, r.y, r.width, r.height, 12, 12);
+        g.fillRoundRect(r.x,r.y,r.width,r.height,10,10);
         g.setPaint(null);
-        g.setColor(new Color(255, 255, 255, hovered ? 220 : 180));
-        g.setStroke(new BasicStroke(1.8f));
-        g.drawRoundRect(r.x, r.y, r.width, r.height, 12, 12);
+        g.setColor(border);
+        g.setStroke(new BasicStroke(hovered?2f:1.5f));
+        g.drawRoundRect(r.x,r.y,r.width,r.height,10,10);
         g.setStroke(new BasicStroke(1f));
-        g.setFont(FontManager.getEmoji(20));
+        g.setFont(FontManager.getBold(13));
+        g.setColor(Color.WHITE);
         FontMetrics fm = g.getFontMetrics();
-        String icon = "\u2699\uFE0F";
-        g.drawString(icon, r.x + (r.width - fm.stringWidth(icon)) / 2, r.y + r.height / 2 + fm.getAscent() / 2 - 3);
+        String label = "Exit Game";
+        g.drawString(label, r.x+(r.width-fm.stringWidth(label))/2,
+                r.y+r.height/2+fm.getAscent()/2-2);
     }
 
     private RenderUtils() {}
