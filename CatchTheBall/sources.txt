@@ -38,6 +38,7 @@ C:\Users\Acer\Music\OOP_PROJECT\CatchTheBall\src\models\ScoreEntry.java
 C:\Users\Acer\Music\OOP_PROJECT\CatchTheBall\src\renderers\BackgroundRenderer.java
 C:\Users\Acer\Music\OOP_PROJECT\CatchTheBall\src\renderers\BasketRenderer.java
 C:\Users\Acer\Music\OOP_PROJECT\CatchTheBall\src\renderers\CharacterRenderer.java
+C:\Users\Acer\Music\OOP_PROJECT\CatchTheBall\src\renderers\FarmBackgroundRenderer.java
 C:\Users\Acer\Music\OOP_PROJECT\CatchTheBall\src\renderers\FarmHouseRenderer.java
 C:\Users\Acer\Music\OOP_PROJECT\CatchTheBall\src\renderers\MenuBackgroundRenderer.java
 C:\Users\Acer\Music\OOP_PROJECT\CatchTheBall\src\renderers\SidebarRenderer.java
