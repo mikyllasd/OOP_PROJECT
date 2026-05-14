@@ -24,7 +24,7 @@ public class PauseScreen extends Screen {
         int pw=420,ph=320,px=(GamePanel.W-pw)/2,py=(GamePanel.H-ph)/2;
         RenderUtils.drawGradientPanel(g,px,py,pw,ph,
                 new Color(28,60,22,245),new Color(16,40,12,245),new Color(100,190,70),2f,20);
-        RenderUtils.drawCenteredText(g,"\u23F8 PAUSED",px+pw/2,py+55,FontManager.getBold(32),ColorPalette.TEXT_GOLD);
+        RenderUtils.drawCenteredText(g,"PAUSED",px+pw/2,py+55,FontManager.getBold(32),ColorPalette.TEXT_GOLD);
         if (gs!=null&&gs.getState()!=null) {
             var st=gs.getState();
             RenderUtils.drawCenteredText(g,"Score: "+st.getScore(),px+pw/2,py+95,FontManager.getBodyBold(16),ColorPalette.TEXT_SCORE);
@@ -34,9 +34,9 @@ public class PauseScreen extends Screen {
         resumeBtn  = new Rectangle(px+20,py+188,118,44);
         restartBtn = new Rectangle(px+154,py+188,118,44);
         menuBtn    = new Rectangle(px+286,py+188,118,44);
-        RenderUtils.drawButton(g,resumeBtn, "\u25B6 Resume",   hovered==0, FontManager.getBold(13));
-        RenderUtils.drawButton(g,restartBtn,"\uD83D\uDD04 Restart",hovered==1,FontManager.getBold(13));
-        RenderUtils.drawButton(g,menuBtn,   "\uD83C\uDFE0 Menu",   hovered==2, FontManager.getBold(13));
+        RenderUtils.drawButton(g, resumeBtn,  "Resume",   hovered==0, FontManager.getBold(13)); 
+        RenderUtils.drawButton(g, restartBtn, "Restart",  hovered==1, FontManager.getBold(13)); 
+        RenderUtils.drawButton(g, menuBtn,    "Menu",     hovered==2, FontManager.getBold(13)); 
         RenderUtils.drawCenteredText(g,"P = resume   ESC = menu",px+pw/2,py+268,
                 FontManager.getBody(12),new Color(155,195,135));
     }
