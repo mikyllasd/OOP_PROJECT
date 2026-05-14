@@ -1,9 +1,9 @@
 package OOP_PROJECT.CatchTheBall.src.enums;
 
 public enum Difficulty {
-    EASY("Easy",     1.40f, 140, -2,  7),
+    EASY("Easy",     1.80f, 140, -2,  7),
     NORMAL("Normal", 2.80f, 110, -20, 5),
-    HARD("Hard",     4.20f,  80, -35, 4);
+    HARD("Hard",     5.00f,  80, -35, 4);
 
     private final String displayName;
     private final float  speedMultiplier;
