@@ -19,19 +19,45 @@ public class BallSpawner {
 
     public void update(List<Ball> balls, int level, Difficulty difficulty) {
         int maxBalls;
-        if      (difficulty == Difficulty.EASY)   maxBalls = 3;
-        else if (difficulty == Difficulty.NORMAL) maxBalls = 5;
-        else                                      maxBalls = 7;
+        if      (difficulty == Difficulty.EASY)   maxBalls = 6;
+        else if (difficulty == Difficulty.NORMAL) maxBalls = 9;
+        else                                      maxBalls = 13;
         if (balls.size() >= maxBalls) return;
 
         spawnTimer--;
         if (spawnTimer <= 0) {
+            // Always spawn at least one ball
             balls.add(createBall(level, difficulty));
+
+            if (difficulty == Difficulty.EASY && rand.nextFloat() < 0.20f) {
+                // Easy: occasional 2nd ball
+                balls.add(createBall(level, difficulty));
+            } else if (difficulty == Difficulty.NORMAL) {
+                // Normal: frequent 2nd ball, occasional 3rd
+                if (rand.nextFloat() < 0.45f) {
+                    balls.add(createBall(level, difficulty));
+                }
+                if (rand.nextFloat() < 0.20f) {
+                    balls.add(createBall(level, difficulty));
+                }
+            } else if (difficulty == Difficulty.HARD) {
+                // Hard: almost always 2nd, frequent 3rd, occasional 4th
+                if (rand.nextFloat() < 0.75f) {
+                    balls.add(createBall(level, difficulty));
+                }
+                if (rand.nextFloat() < 0.50f) {
+                    balls.add(createBall(level, difficulty));
+                }
+                if (rand.nextFloat() < 0.25f) {
+                    balls.add(createBall(level, difficulty));
+                }
+            }
+
             int base;
-            if      (difficulty == Difficulty.EASY)   base = Math.max(110, 150 - level * 2);
-            else if (difficulty == Difficulty.NORMAL) base = Math.max(75,  115 - level * 2);
-            else                                      base = Math.max(50,   90 - level * 2);
-            spawnTimer = base + rand.nextInt(20);
+            if      (difficulty == Difficulty.EASY)   base = Math.max(55,  90 - level * 2);
+            else if (difficulty == Difficulty.NORMAL) base = Math.max(35,   65 - level * 2);
+            else                                      base = Math.max(15,   40 - level * 2);
+            spawnTimer = base + rand.nextInt(12);
         }
     }
 
@@ -45,11 +71,11 @@ public class BallSpawner {
 
     private Ball createBall(int level, Difficulty diff) {
         float x         = 30 + rand.nextFloat() * (arenaWidth - 70);
-        float baseSpeed = 0.7f + level * 0.07f + rand.nextFloat() * 0.3f;
+        float baseSpeed = 0.9f + level * 0.09f + rand.nextFloat() * 0.4f;
         float maxSpeed;
-        if      (diff == Difficulty.EASY)   maxSpeed = 5.5f;
-        else if (diff == Difficulty.NORMAL) maxSpeed = 8.5f;
-        else                                maxSpeed = 12.0f;
+        if      (diff == Difficulty.EASY)   maxSpeed = 7.0f;
+        else if (diff == Difficulty.NORMAL) maxSpeed = 12.0f;
+        else                                maxSpeed = 18.0f;
         float speed = Math.min(baseSpeed * diff.getSpeedMultiplier(), maxSpeed);
         return new Ball(x, -40, rollBallType(level, diff), speed);
     }
@@ -62,47 +88,52 @@ public class BallSpawner {
             if (r < 5)  return BallType.FROZEN;
             if (r < 10) return BallType.GIANT;
             if (r < 15) return BallType.TINY;
-            if (r < 25) return BallType.STRAWBERRY;
-            if (level >= 6 && r < 70)  return BallType.MUSHROOM;
-            if (level >= 8 && r < 100) return BallType.EGGPLANT;
-            if (r < 550) return BallType.APPLE;
+            if (r < 30) return BallType.STRAWBERRY;
+            if (level >= 5 && r < 80)  return BallType.MUSHROOM;
+            if (level >= 7 && r < 110) return BallType.EGGPLANT;
+            if (level >= 9 && r < 130) return BallType.BOMB;
+            if (r < 560) return BallType.APPLE;
             return BallType.ORANGE;
         }
 
         if (diff == Difficulty.NORMAL) {
-            if (r < 3)  return BallType.RAINBOW;
-            if (r < 7)  return BallType.FROZEN;
-            if (r < 13) return BallType.GIANT;
-            if (r < 20) return BallType.TINY;
-            if (r < 40) return BallType.STRAWBERRY;
-            if (level >= 3 && r < 110) return BallType.MUSHROOM;
-            if (level >= 4 && r < 180) return BallType.EGGPLANT;
-            if (level >= 6 && r < 220) return BallType.BOMB;
-            if (level >= 8 && r < 260) return BallType.GOLDEN_APPLE;
-            if (level >= 8 && r < 300) return BallType.MYSTERY;
-            if (r < 620) return BallType.APPLE;
+            if (r < 3)   return BallType.RAINBOW;
+            if (r < 8)   return BallType.FROZEN;
+            if (r < 14)  return BallType.GIANT;
+            if (r < 22)  return BallType.TINY;
+            // Bombs — heavy presence from level 1
+            if (r < 100)               return BallType.BOMB;
+            if (level >= 2 && r < 180) return BallType.BOMB;
+            if (r < 220)               return BallType.STRAWBERRY;
+            if (level >= 3 && r < 300) return BallType.MUSHROOM;
+            if (level >= 4 && r < 380) return BallType.EGGPLANT;
+            if (level >= 5 && r < 440) return BallType.GOLDEN_APPLE;
+            if (level >= 5 && r < 500) return BallType.MYSTERY;
+            if (r < 720) return BallType.APPLE;
             return BallType.ORANGE;
         }
 
-        // HARD
+        // HARD — bombs everywhere
         if (r < 3)  return BallType.RAINBOW;
         if (r < 8)  return BallType.FROZEN;
-        if (r < 15) return BallType.GIANT;
-        if (r < 22) return BallType.TINY;
+        if (r < 14) return BallType.GIANT;
+        if (r < 20) return BallType.TINY;
         if (level >= 8) {
-            if (r < 40)  return BallType.GOLDEN_APPLE;
-            if (r < 90)  return BallType.BOMB;
-            if (r < 140) return BallType.MYSTERY;
-            if (r < 240) return BallType.STRAWBERRY;
-            if (r < 390) return BallType.MUSHROOM;
-            if (r < 510) return BallType.EGGPLANT;
-            if (r < 750) return BallType.APPLE;
+            if (r < 50)  return BallType.GOLDEN_APPLE;
+            if (r < 280) return BallType.BOMB;       // 23% chance — very heavy
+            if (r < 330) return BallType.MYSTERY;
+            if (r < 430) return BallType.STRAWBERRY;
+            if (r < 560) return BallType.MUSHROOM;
+            if (r < 670) return BallType.EGGPLANT;
+            if (r < 870) return BallType.APPLE;
             return BallType.ORANGE;
         }
-        if (r < 50)  return BallType.STRAWBERRY;
-        if (level >= 3 && r < 150) return BallType.MUSHROOM;
-        if (level >= 4 && r < 250) return BallType.EGGPLANT;
-        if (r < 600) return BallType.APPLE;
+        // HARD early levels — bombs still very common
+        if (r < 200) return BallType.BOMB;
+        if (r < 270) return BallType.STRAWBERRY;
+        if (level >= 3 && r < 390) return BallType.MUSHROOM;
+        if (level >= 4 && r < 510) return BallType.EGGPLANT;
+        if (r < 750) return BallType.APPLE;
         return BallType.ORANGE;
     }
 

@@ -21,27 +21,23 @@ public class CharacterCreationScreen extends Screen {
     private static final Difficulty[] DIFFS       = {Difficulty.EASY, Difficulty.NORMAL, Difficulty.HARD};
     private static final Color[]      DIFF_COLORS = {new Color(80,200,80), new Color(255,200,50), new Color(255,80,80)};
 
-    // ── layout constants ────────────────────────────────────────────────────
-    // Two-column layout: card on left, farmhouse panel on right.
-    private static final int CARD_Y          = 85;
-    private static final int CARD_H          = 470;
-    private static final int CARD_W          = 520;
+    private static final int CARD_Y      = 85;
+    private static final int CARD_H      = 470;
+    private static final int CARD_W      = 520;
 
-    // Y-positions (X is computed dynamically from cardX in draw)
-    private static final int TITLE_Y         = CARD_Y + 40;
-    private static final int NAME_LBL_Y      = CARD_Y + 72;
-    private static final int NAME_BOX_Y      = CARD_Y + 80;
-    private static final int SKIN_LBL_Y      = CARD_Y + 138;
-    private static final int SKIN_BOX_Y      = CARD_Y + 150;
-    private static final int SKIN_BH         = 120;
-    private static final int DIFF_LBL_Y      = CARD_Y + 295;
-    private static final int DIFF_BTN_Y      = CARD_Y + 307;
-    private static final int START_BTN_Y     = CARD_Y + 362;
-    private static final int BACK_LBL_Y      = CARD_Y + 448;
+    private static final int TITLE_Y     = CARD_Y + 40;
+    private static final int NAME_LBL_Y  = CARD_Y + 72;
+    private static final int NAME_BOX_Y  = CARD_Y + 80;
+    private static final int SKIN_LBL_Y  = CARD_Y + 138;
+    private static final int SKIN_BOX_Y  = CARD_Y + 150;
+    private static final int SKIN_BH     = 120;
+    private static final int DIFF_LBL_Y  = CARD_Y + 295;
+    private static final int DIFF_BTN_Y  = CARD_Y + 307;
+    private static final int START_BTN_Y = CARD_Y + 362;
+    private static final int BACK_LBL_Y  = CARD_Y + 448;
 
-    // Farmhouse panel (right column)
-    private static final int HOUSE_PANEL_W   = 220;
-    private static final int HOUSE_PANEL_H   = 300;
+    private static final int HOUSE_PANEL_W = 220;
+    private static final int HOUSE_PANEL_H = 300;
 
     public CharacterCreationScreen(GamePanel panel) { super(panel); }
 
@@ -57,49 +53,37 @@ public class CharacterCreationScreen extends Screen {
 
     @Override public void update() { tickCount++; }
 
-    private static final int GAP          = 16;   // gap between card and house panel
+    private static final int GAP = 16;
 
-    /** Total width of both panels side by side. */
     private int totalW()  { return CARD_W + GAP + HOUSE_PANEL_W + 40; }
-    /** Left edge of the whole two-column group, centred on screen. */
     private int groupX()  { return (GamePanel.W - totalW()) / 2; }
-    /** Left edge of the card (left column). */
     private int cardX()   { return groupX(); }
-    /** Left edge of the farmhouse panel (right column). */
     private int houseX()  { return groupX() + CARD_W + GAP; }
 
     @Override
     public void draw(Graphics2D g) {
-        // 1. Background
         FarmBackgroundRenderer.draw(g, GamePanel.W, GamePanel.H, tickCount);
 
-        // 2. Dark overlay
         g.setColor(new Color(0, 0, 0, 100));
         g.fillRect(0, 0, GamePanel.W, GamePanel.H);
 
-        // 3. Header bar
         RenderUtils.drawHeaderBar(g, GamePanel.W, "Character Creation");
 
-        // 4. Farmhouse showcase panel (right column) – draw BEFORE card so card is on top
         drawFarmhouseShowcase(g);
 
-        // 5. Card panel (left column)
         int cx = cardX();
         RenderUtils.drawGradientPanel(g, cx, CARD_Y, CARD_W, CARD_H,
                 new Color(24, 58, 16, 230), new Color(14, 38, 8, 230),
                 new Color(90, 175, 65), 2f, 22);
 
-        // 6. Card title
         RenderUtils.drawCenteredText(g, "Create Your Farmhand",
                 cx + CARD_W / 2, TITLE_Y, FontManager.getBold(24), ColorPalette.TEXT_GOLD);
 
-        // 7. Sections
         drawNameField(g, cx);
         drawSkinPicker(g, cx);
         drawDifficultyPicker(g, cx);
         drawStartButton(g, cx);
 
-        // 8. Back link
         g.setFont(FontManager.getBodyBold(13));
         g.setColor(new Color(180, 220, 150));
         int backX = cx + 12;
@@ -107,7 +91,6 @@ public class CharacterCreationScreen extends Screen {
         g.drawString("Back to Menu", backX + 18, BACK_LBL_Y);
     }
 
-    // ── Name field ───────────────────────────────────────────────────────────
     private void drawNameField(Graphics2D g, int cx) {
         int lx = cx + 18;
         int boxW = CARD_W - 36;
@@ -126,7 +109,6 @@ public class CharacterCreationScreen extends Screen {
                 lx + 12, NAME_BOX_Y + 26);
     }
 
-    // ── Skin picker ──────────────────────────────────────────────────────────
     private void drawSkinPicker(Graphics2D g, int cx) {
         int lx = cx + 18;
 
@@ -160,24 +142,14 @@ public class CharacterCreationScreen extends Screen {
         }
     }
 
-    /**
-     * Draws a mini character centred at (cx, y) scaled to fit within (w × h).
-     * BUG FIX: scale is now derived from the available height so the character
-     * actually fills – and stays inside – the card.
-     */
     private void drawMiniCharacter(Graphics2D g, SkinType skin,
                                    int cx, int y, int w, int h, int tick) {
-        // The standalone character spans roughly 70 px tall and 50 px wide.
-        // Cap at 0.75 so characters stay proportionally small inside the card.
         float scale = Math.min(w / 50f, h / 70f) * 0.75f;
 
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-        // Translate so the character is horizontally centred and vertically placed from y
         g2.translate(cx - 25 * scale, y);
         g2.scale(scale, scale);
-
         drawStandaloneCharacter(g2, skin, 0, 0, tick);
         g2.dispose();
     }
@@ -198,41 +170,34 @@ public class CharacterCreationScreen extends Screen {
                 shirtColor= new Color(100, 180, 240); pantsColor = new Color(80, 130, 200);
                 shoeColor = new Color(80, 60, 200);
                 break;
-            default: // FARMER_MALE
+            default:
                 skinTone  = new Color(220, 175, 120); hairColor  = new Color(110, 70, 30);
                 shirtColor= new Color(100, 140, 200); pantsColor = new Color(60, 90, 160);
                 shoeColor = new Color(60, 40, 20);
         }
 
-        // BUG FIX: cast bob to int once so arithmetic is unambiguous
-        int bob = (int) (Math.sin(tick * 0.1) * 2);
+        int bob = (int)(Math.sin(tick * 0.1) * 2);
 
-        // Shadow
         g.setColor(new Color(0, 0, 0, 35));
         g.fillOval(cx - 16, y + 58 + bob, 32, 7);
 
-        // Legs
         g.setColor(pantsColor);
         g.fillRect(cx - 8, y + 38 + bob, 8, 18);
         g.fillRect(cx + 1,  y + 38 + bob, 8, 18);
 
-        // Shoes
         g.setColor(shoeColor);
         g.fillRoundRect(cx - 10 + (walk ? 2 : 0), y + 54 + bob, 12, 6, 4, 4);
         g.fillRoundRect(cx + 1  + (walk ? 0 : 2), y + 54 + bob, 12, 6, 4, 4);
 
-        // Body
         g.setColor(shirtColor);
         int[] bxArr = {cx - 12, cx + 12, cx + 10, cx - 10};
         int[] byArr = {y + 18 + bob, y + 18 + bob, y + 38 + bob, y + 38 + bob};
         g.fillPolygon(bxArr, byArr, 4);
 
-        // Shirt highlight
         g.setColor(new Color(255, 255, 255, 35));
         g.fillRect(cx - 10, y + 19 + bob, 8, 16);
 
-        // Arms (swinging)
-        int swing = (int) (Math.sin(tick * 0.12) * 5);
+        int swing = (int)(Math.sin(tick * 0.12) * 5);
         g.setColor(shirtColor.darker());
         g.fillRoundRect(cx - 18, y + 22 + bob + swing, 7, 13, 3, 3);
         g.fillRoundRect(cx + 11, y + 22 + bob - swing, 7, 13, 3, 3);
@@ -240,82 +205,61 @@ public class CharacterCreationScreen extends Screen {
         g.fillOval(cx - 18, y + 33 + bob + swing, 8, 8);
         g.fillOval(cx + 11, y + 33 + bob - swing, 8, 8);
 
-        // Neck
         g.setColor(skinTone);
         g.fillRoundRect(cx - 4, y + 11 + bob, 8, 9, 4, 4);
-
-        // Head
         g.fillOval(cx - 12, y + bob, 24, 22);
 
-        // Cheeks
         g.setColor(new Color(255, 160, 140, 70));
         g.fillOval(cx - 12, y + 9 + bob, 8, 6);
         g.fillOval(cx + 4,  y + 9 + bob, 8, 6);
 
-        // Eyes (white)
         g.setColor(Color.WHITE);
         g.fillOval(cx - 9, y + 7 + bob, 7, 6);
         g.fillOval(cx + 2, y + 7 + bob, 7, 6);
-        // Iris
         g.setColor(new Color(40, 60, 180));
         g.fillOval(cx - 7, y + 9 + bob, 4, 4);
         g.fillOval(cx + 4, y + 9 + bob, 4, 4);
-        // Pupil
         g.setColor(Color.BLACK);
         g.fillOval(cx - 6, y + 10 + bob, 2, 2);
         g.fillOval(cx + 5, y + 10 + bob, 2, 2);
-        // Highlight
         g.setColor(Color.WHITE);
         g.fillOval(cx - 5, y + 10 + bob, 1, 1);
         g.fillOval(cx + 6, y + 10 + bob, 1, 1);
 
-        // Blink
         if (tick % 100 < 3) {
             g.setColor(skinTone);
             g.fillRect(cx - 9, y + 9 + bob, 7, 4);
             g.fillRect(cx + 2, y + 9 + bob, 7, 4);
         }
 
-        // Smile
-        Stroke origStroke = g.getStroke();   // BUG FIX: save and restore stroke
+        Stroke origStroke = g.getStroke();
         g.setColor(new Color(180, 80, 80));
         g.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         g.drawArc(cx - 4, y + 14 + bob, 8, 5, 200, 140);
 
-        // Eyebrows
         g.setColor(hairColor.darker());
         g.drawLine(cx - 8, y + 5 + bob, cx - 4, y + 4 + bob);
         g.drawLine(cx + 4, y + 4 + bob, cx + 8, y + 5 + bob);
-        g.setStroke(origStroke);  // BUG FIX: restore instead of hard-coding new BasicStroke(1f)
+        g.setStroke(origStroke);
 
-        // Hat / Hair per skin
         switch (skin) {
             case FARMER_MALE:
-                // Straw hat brim
                 g.setColor(new Color(210, 180, 80));
                 g.fillOval(cx - 18, y - 2 + bob, 36, 10);
-                // Crown
                 g.setColor(new Color(190, 155, 60));
                 g.fillRoundRect(cx - 10, y - 13 + bob, 20, 14, 6, 6);
-                // Band
                 g.setColor(new Color(160, 120, 40));
                 g.fillRect(cx - 10, y - 2 + bob, 20, 3);
                 break;
-
             case FARMER_FEMALE:
-                // Pink hat brim
                 g.setColor(new Color(220, 160, 180));
                 g.fillOval(cx - 16, y - 3 + bob, 32, 12);
-                // Crown
                 g.setColor(new Color(200, 130, 160));
                 g.fillRoundRect(cx - 10, y - 14 + bob, 20, 14, 8, 8);
-                // Band
                 g.setColor(new Color(255, 150, 180));
                 g.fillRect(cx - 10, y - 3 + bob, 20, 3);
-                // Flower centre
                 g.setColor(new Color(255, 200, 50));
                 g.fillOval(cx + 4, y - 16 + bob, 7, 7);
-                // Petals
                 g.setColor(new Color(255, 100, 100));
                 for (int p = 0; p < 5; p++) {
                     double a = Math.toRadians(p * 72);
@@ -323,13 +267,10 @@ public class CharacterCreationScreen extends Screen {
                                (int)(y - 13 + bob + Math.sin(a) * 4) - 2, 4, 4);
                 }
                 break;
-
             case FARM_KID:
-                // Red cap
                 g.setColor(new Color(200, 60, 60));
                 g.fillOval(cx - 11, y - 10 + bob, 22, 16);
                 g.fillOval(cx - 13, y       + bob, 26,  7);
-                // Cap seam
                 g.setColor(Color.WHITE);
                 Stroke cs = g.getStroke();
                 g.setStroke(new BasicStroke(1f));
@@ -338,12 +279,10 @@ public class CharacterCreationScreen extends Screen {
                 break;
         }
 
-        // Hair tufts (peeking below hat)
         g.setColor(hairColor);
         g.fillRect(cx - 10, y + 17 + bob, 20, 5);
     }
 
-    // ── Difficulty picker ────────────────────────────────────────────────────
     private void drawDifficultyPicker(Graphics2D g, int cx) {
         int lx = cx + 18;
 
@@ -373,7 +312,6 @@ public class CharacterCreationScreen extends Screen {
         }
     }
 
-    // ── Start button ─────────────────────────────────────────────────────────
     private void drawStartButton(Graphics2D g, int cx) {
         boolean can = nameInput.length() > 0;
         int btnW = CARD_W - 60;
@@ -392,58 +330,66 @@ public class CharacterCreationScreen extends Screen {
         }
     }
 
-    // ── Farmhouse showcase ───────────────────────────────────────────────────
     private void drawFarmhouseShowcase(Graphics2D g) {
         int hx = houseX();
         int hy = CARD_Y;
-        int pw = HOUSE_PANEL_W + 40;   // panel width
-        int ph = CARD_H;               // same height as the card
+        int pw = HOUSE_PANEL_W + 40;
+        int ph = CARD_H;
 
-        // Panel background – same style as the card
+        // Panel background
         RenderUtils.drawGradientPanel(g, hx, hy, pw, ph,
                 new Color(20, 50, 12, 220), new Color(10, 30, 6, 220),
                 new Color(80, 160, 55), 2f, 22);
 
-        // Section title
+        // Title
         RenderUtils.drawCenteredText(g, "Your Farm",
                 hx + pw / 2, hy + 38,
                 FontManager.getBold(18), ColorPalette.TEXT_GOLD);
 
-        // Decorative divider
+        // Divider
         g.setColor(new Color(90, 175, 65, 120));
         g.fillRect(hx + 20, hy + 48, pw - 40, 2);
 
-        // House image – large and centred
-        int houseW = pw - 30;
-        int houseH = (int)(houseW * 0.85f);
-        int houseDrawX = hx + 15;
-        int houseDrawY = hy + 65;
+        // House — smaller and strictly clipped inside panel
+        // leave 55px at top (title+divider), 60px at bottom (labels)
+        int houseAreaX = hx + 15;
+        int houseAreaY = hy + 58;
+        int houseAreaW = pw - 30;
+        int houseAreaH = ph - 120;   // shrunk from full panel height
+
+        // House draws at 90% of area width, square-ish aspect
+        int houseW = (int)(houseAreaW * 0.85f);
+        int houseH = (int)(houseW * 0.80f);   // keep aspect reasonable
+
+        // Centre horizontally, top-align in area
+        int houseDrawX = houseAreaX + (houseAreaW - houseW) / 2;
+        int houseDrawY = houseAreaY + 10;
+
+        // Hard clip to area — house never bleeds outside
+        Shape oldClip = g.getClip();
+        g.setClip(houseAreaX, houseAreaY, houseAreaW, houseAreaH);
         FarmHouseRenderer.draw(g, panel.getPlayerData().getFarmStage(),
                 houseDrawX, houseDrawY, houseW, houseH);
+        g.setClip(oldClip);
 
-        // Farm stage label (e.g. "Stage 2")
+        // Stage label — positioned below clip area
+        int labelY = houseAreaY + houseAreaH + 18;
         String stageLabel = "Stage " + (panel.getPlayerData().getFarmStage() + 1);
         g.setFont(FontManager.getBodyBold(13));
         g.setColor(new Color(200, 240, 160));
         FontMetrics fm = g.getFontMetrics();
         g.drawString(stageLabel,
-                hx + (pw - fm.stringWidth(stageLabel)) / 2,
-                houseDrawY + houseH + 22);
+                hx + (pw - fm.stringWidth(stageLabel)) / 2, labelY);
 
-        // Small flavour text
+        // Flavour text
         g.setFont(FontManager.getBody(11));
         g.setColor(new Color(160, 210, 130, 200));
         String sub = "Upgrade your farm as you play!";
         fm = g.getFontMetrics();
-        g.drawString(sub, hx + (pw - fm.stringWidth(sub)) / 2,
-                houseDrawY + houseH + 40);
+        g.drawString(sub,
+                hx + (pw - fm.stringWidth(sub)) / 2, labelY + 18);
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    //  SMALL ICON HELPERS  (replace blank boxes)
-    // ════════════════════════════════════════════════════════════════════════
-
-    /** ◀ arrow icon */
     private void drawArrowIcon(Graphics2D g, int x, int y, boolean right) {
         g.setColor(new Color(180, 220, 150));
         int[] px = right ? new int[]{x, x + 10, x}     : new int[]{x + 10, x, x + 10};
@@ -451,7 +397,6 @@ public class CharacterCreationScreen extends Screen {
         g.fillPolygon(px, py, 3);
     }
 
-    /** Small 5-point star icon */
     private void drawStarIcon(Graphics2D g, int x, int y, Color c) {
         g.setColor(c);
         int[] px = new int[10];
@@ -465,7 +410,6 @@ public class CharacterCreationScreen extends Screen {
         g.fillPolygon(px, py, 10);
     }
 
-    /** Simple tag / label icon */
     private void drawTagIcon(Graphics2D g, int x, int y) {
         g.setColor(new Color(180, 220, 150));
         g.fillRoundRect(x, y, 14, 10, 4, 4);
@@ -478,41 +422,33 @@ public class CharacterCreationScreen extends Screen {
         g.setStroke(s);
     }
 
-    /** Small shirt silhouette icon */
     private void drawShirtIcon(Graphics2D g, int x, int y) {
         g.setColor(new Color(180, 220, 150));
-        // collar notch
         int[] px = {x, x+3, x+5, x+9, x+11, x+14, x+11, x+3};
         int[] py = {y+3, y,   y+4, y+4, y,    y+3,  y+13, y+13};
         g.fillPolygon(px, py, 8);
     }
 
-    /** Tiny tractor silhouette */
     private void drawTractorIcon(Graphics2D g, int x, int y) {
         g.setColor(new Color(255, 220, 80));
-        g.fillRect(x + 2, y + 6, 16, 10);          // body
-        g.fillRect(x + 12, y + 2, 8, 8);            // cabin
+        g.fillRect(x + 2, y + 6, 16, 10);
+        g.fillRect(x + 12, y + 2, 8, 8);
         g.setColor(new Color(60, 60, 60));
-        g.fillOval(x,      y + 11, 10, 10);          // rear wheel
-        g.fillOval(x + 14, y + 14, 7, 7);            // front wheel
+        g.fillOval(x,      y + 11, 10, 10);
+        g.fillOval(x + 14, y + 14, 7, 7);
     }
 
-    /** Padlock icon */
     private void drawLockIcon(Graphics2D g, int x, int y) {
         g.setColor(new Color(140, 180, 110));
-        g.fillRoundRect(x + 2, y + 7, 14, 12, 4, 4);  // body
+        g.fillRoundRect(x + 2, y + 7, 14, 12, 4, 4);
         Stroke s = g.getStroke();
         g.setStroke(new BasicStroke(2.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        g.drawArc(x + 4, y, 10, 10, 0, 180);           // shackle arc
+        g.drawArc(x + 4, y, 10, 10, 0, 180);
         g.setStroke(s);
         g.setColor(new Color(24, 58, 16));
-        g.fillOval(x + 7, y + 10, 4, 4);               // keyhole
+        g.fillOval(x + 7, y + 10, 4, 4);
         g.fillRect(x + 8, y + 13, 2, 4);
     }
-
-    // ════════════════════════════════════════════════════════════════════════
-    //  INPUT HANDLING
-    // ════════════════════════════════════════════════════════════════════════
 
     @Override
     public void onKeyPressed(KeyEvent e) {
@@ -533,7 +469,6 @@ public class CharacterCreationScreen extends Screen {
         int mx = e.getX(), my = e.getY();
         int cx = cardX();
 
-        // Skin cards
         int bw    = 148;
         int totalW = STARTERS.length * bw + (STARTERS.length - 1) * 8;
         int sx    = cx + (CARD_W - totalW) / 2;
@@ -544,7 +479,6 @@ public class CharacterCreationScreen extends Screen {
             }
         }
 
-        // Difficulty buttons
         int dbw   = 148;
         int totalDW = DIFFS.length * dbw + (DIFFS.length - 1) * 8;
         int dsx   = cx + (CARD_W - totalDW) / 2;
@@ -556,7 +490,6 @@ public class CharacterCreationScreen extends Screen {
             }
         }
 
-        // Start button
         int btnW = CARD_W - 60;
         if (new Rectangle(cx + 30, START_BTN_Y, btnW, 48).contains(mx, my)
                 && nameInput.length() > 0) {
@@ -564,7 +497,6 @@ public class CharacterCreationScreen extends Screen {
             return;
         }
 
-        // Back to menu
         int backX = cx + 12;
         if (new Rectangle(backX, BACK_LBL_Y - 14, 140, 18).contains(mx, my)) {
             panel.switchToWithFade(GameScreenType.MAIN_MENU);

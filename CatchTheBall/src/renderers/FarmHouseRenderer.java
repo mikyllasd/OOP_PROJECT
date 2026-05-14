@@ -3,20 +3,28 @@ package OOP_PROJECT.CatchTheBall.src.renderers;
 import java.awt.*;
 import java.awt.geom.*;
 
+/**
+ * FarmHouseRenderer — fully redrawn with pixel-art-inspired style,
+ * rich gradients, layered detail, and 8 visually distinct tiers.
+ * Each tier has unique architectural character.
+ */
 public class FarmHouseRenderer {
 
     public static void draw(Graphics2D g, int stage, int x, int y, int w, int h) {
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,  RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_RENDERING,     RenderingHints.VALUE_RENDER_QUALITY);
         switch (getHouseType(stage)) {
-            case 0: drawOldShack(g, x, y, w, h);    break;
-            case 1: drawSimpleHouse(g, x, y, w, h); break;
-            case 2: drawFarmHouse(g, x, y, w, h);   break;
-            case 3: drawVillage(g, x, y, w, h);     break;
-            case 4: drawGrandFarm(g, x, y, w, h);   break;
-            case 5: drawCastleFarm(g, x, y, w, h);  break;
-            case 6: drawRoyalPalace(g, x, y, w, h); break;
-            case 7: drawLegendMansion(g, x, y, w, h); break;
+            case 0: drawOldShack     (g2, x, y, w, h); break;
+            case 1: drawSimpleHouse  (g2, x, y, w, h); break;
+            case 2: drawFarmHouse    (g2, x, y, w, h); break;
+            case 3: drawVillage      (g2, x, y, w, h); break;
+            case 4: drawGrandFarm    (g2, x, y, w, h); break;
+            case 5: drawCastleFarm   (g2, x, y, w, h); break;
+            case 6: drawRoyalPalace  (g2, x, y, w, h); break;
+            case 7: drawLegendMansion(g2, x, y, w, h); break;
         }
+        g2.dispose();
     }
 
     private static int getHouseType(int stage) {
@@ -30,727 +38,991 @@ public class FarmHouseRenderer {
         return 7;
     }
 
-    // ── STAGE 1-2: Old Shack ──
+    // ── shared helpers ────────────────────────────────────────────────────────
+
+    private static void drawWindow(Graphics2D g, int x, int y, int w, int h, Color glass) {
+        // drop shadow
+        g.setColor(new Color(0,0,0,45));
+        g.fillRoundRect(x+2, y+2, w, h, 5, 5);
+        // outer frame
+        GradientPaint fp = new GradientPaint(x-4, y-4, new Color(140, 100, 50),
+                x+w+4, y+h+4, new Color(90, 60, 25));
+        g.setPaint(fp); g.fillRoundRect(x-5, y-5, w+10, h+10, 8, 8); g.setPaint(null);
+        // inner reveal shadow
+        g.setColor(new Color(55, 35, 12));
+        g.fillRoundRect(x-2, y-2, w+4, h+4, 6, 6);
+        // glass pane
+        GradientPaint gp = new GradientPaint(x, y, lighter(glass, 55), x+w, y+h, glass);
+        g.setPaint(gp); g.fillRoundRect(x, y, w, h, 4, 4); g.setPaint(null);
+        // cross dividers
+        g.setColor(new Color(85, 65, 35, 195));
+        g.setStroke(new BasicStroke(1.8f));
+        g.drawLine(x+w/2, y, x+w/2, y+h);
+        g.drawLine(x, y+h/2, x+w, y+h/2);
+        g.setStroke(new BasicStroke(1f));
+        // gleam
+        g.setColor(new Color(255, 255, 255, 145));
+        g.fillOval(x+2, y+2, w/3, h/3);
+        g.setColor(new Color(255, 255, 255, 60));
+        g.fillOval(x+4, y+3, 3, 2);
+        // sill
+        GradientPaint sillG = new GradientPaint(x-7, y+h, new Color(190,158,90),
+                x+w+7, y+h+5, new Color(148,112,55));
+        g.setPaint(sillG); g.fillRoundRect(x-7, y+h, w+14, 7, 4, 4); g.setPaint(null);
+        // frame outline
+        g.setColor(new Color(68, 45, 16));
+        g.setStroke(new BasicStroke(1f));
+        g.drawRoundRect(x-5, y-5, w+10, h+10, 8, 8);
+        g.setStroke(new BasicStroke(1f));
+    }
+
+    private static void drawDoor(Graphics2D g, int x, int y, int w, int h, Color col) {
+        // shadow
+        g.setColor(new Color(0,0,0,45));
+        g.fillRoundRect(x+2, y+2, w, h+2, 7, 7);
+        // door body gradient
+        GradientPaint dp = new GradientPaint(x, y, lighter(col, 35), x+w, y+h, darker(col, 30));
+        g.setPaint(dp); g.fillRoundRect(x, y, w, h, 7, 7); g.setPaint(null);
+        // panel recesses
+        int ph2 = (h-14)/2;
+        g.setColor(darker(col, 20));
+        g.setStroke(new BasicStroke(1.5f));
+        g.drawRoundRect(x+4, y+5, w-8, ph2, 4, 4);
+        g.drawRoundRect(x+4, y+8+ph2, w-8, ph2, 4, 4);
+        g.setStroke(new BasicStroke(1f));
+        // panel inner highlight
+        g.setColor(new Color(255,255,255,28));
+        g.fillRoundRect(x+5, y+6, (w-8)/2, ph2/2, 3, 3);
+        // door highlight strip
+        g.setColor(lighter(col, 60));
+        g.fillRect(x+3, y+3, 3, h-6);
+        // knob
+        g.setColor(new Color(215, 178, 58));
+        g.fillOval(x+w-11, y+h/2-4, 8, 8);
+        g.setColor(new Color(255, 222, 85));
+        g.fillOval(x+w-10, y+h/2-3, 3, 3);
+        g.setColor(new Color(155, 122, 22));
+        g.setStroke(new BasicStroke(0.8f));
+        g.drawOval(x+w-11, y+h/2-4, 8, 8);
+        g.setStroke(new BasicStroke(1f));
+        // outline
+        g.setColor(darker(col, 50));
+        g.setStroke(new BasicStroke(1.5f));
+        g.drawRoundRect(x, y, w, h, 7, 7);
+        g.setStroke(new BasicStroke(1f));
+    }
+
+    private static void drawChimney(Graphics2D g, int x, int y, int w, int h,
+                                     Color brickC, Color topC) {
+        GradientPaint cp = new GradientPaint(x, y, lighter(brickC, 25),
+                x+w, y+h, darker(brickC, 20));
+        g.setPaint(cp); g.fillRect(x, y, w, h); g.setPaint(null);
+        // brick courses
+        g.setColor(darker(brickC, 30));
+        g.setStroke(new BasicStroke(0.8f));
+        for (int r = 0; r < h/5; r++) g.drawLine(x, y+r*5, x+w, y+r*5);
+        g.setStroke(new BasicStroke(1f));
+        // cap
+        g.setColor(topC);
+        g.fillRect(x-3, y, w+6, 6);
+        g.setColor(darker(topC, 25));
+        g.setStroke(new BasicStroke(1f));
+        g.drawRect(x-3, y, w+6, 6);
+        g.setStroke(new BasicStroke(1f));
+        // mortar highlight
+        g.setColor(lighter(brickC, 50));
+        g.fillRect(x+1, y+1, w-2, 2);
+    }
+
+    private static void drawSmoke(Graphics2D g, int cx, int startY, int count) {
+        for (int s = 0; s < count; s++) {
+            float alpha = 70f - s * 18f;
+            if (alpha <= 0) break;
+            int r = 6 + s*5;
+            g.setColor(new Color(195, 192, 188, (int)alpha));
+            g.fillOval(cx - r/2 + s*2, startY - r - s*10, r, r);
+        }
+    }
+
+    private static void drawStarBadge(Graphics2D g, int x, int y, int count) {
+        g.setColor(new Color(0,0,0,80));
+        g.fillRoundRect(x-40, y, 40, 16, 6, 6);
+        g.setColor(new Color(255, 222, 35, 215));
+        g.setFont(new Font("SansSerif", Font.BOLD, 9));
+        StringBuilder s = new StringBuilder();
+        for (int i = 0; i < Math.min(count, 8); i++) s.append("\u2605");
+        g.drawString(s.toString(), x - 36, y + 11);
+    }
+
+    // ── 0: OLD SHACK (stages 1-2) ─────────────────────────────────────────────
     private static void drawOldShack(Graphics2D g, int x, int y, int w, int h) {
-        int bx = x + w/6, by = y + h/2, bw = w*2/3, bh = h/2;
+        int bx = x+w/6, by = y+h/2, bw = w*2/3, bh = h/2;
 
-        // Ground shadow
-        g.setColor(new Color(0, 0, 0, 40));
-        g.fillOval(bx - 5, by + bh - 5, bw + 10, 14);
+        g.setColor(new Color(0,0,0,38));
+        g.fillOval(bx-2, by+bh-2, bw+4, 10);
 
-        // Walls — old weathered wood
-        GradientPaint wall = new GradientPaint(bx, by, new Color(160, 120, 70), bx + bw, by + bh, new Color(120, 85, 45));
+        // aged wood walls
+        GradientPaint wall = new GradientPaint(bx, by, new Color(172, 132, 82),
+                bx+bw, by+bh, new Color(115, 80, 40));
         g.setPaint(wall); g.fillRect(bx, by, bw, bh); g.setPaint(null);
 
-        // Wood plank lines
-        g.setColor(new Color(90, 60, 30, 150));
+        // wood plank horizontal lines
+        g.setColor(new Color(88, 58, 26, 155));
         g.setStroke(new BasicStroke(1.5f));
-        for (int i = 1; i <= 4; i++) g.drawLine(bx, by + bh * i / 5, bx + bw, by + bh * i / 5);
+        for (int i = 1; i <= 5; i++) g.drawLine(bx, by+bh*i/6, bx+bw, by+bh*i/6);
         g.setStroke(new BasicStroke(1f));
+        // plank gap highlight
+        g.setColor(new Color(215, 185, 128, 35));
+        for (int i = 1; i <= 5; i++) g.drawLine(bx, by+bh*i/6+1, bx+bw, by+bh*i/6+1);
 
-        // Crooked roof
-        int[] rx = {bx - 8, bx + bw / 2, bx + bw + 8};
-        int[] ry = {by, by - h / 3, by};
-        GradientPaint roof = new GradientPaint(bx, by - h/3, new Color(100, 70, 40), bx + bw, by, new Color(70, 45, 20));
-        g.setPaint(roof); g.fillPolygon(rx, ry, 3); g.setPaint(null);
+        // left highlight
+        g.setColor(new Color(255, 225, 162, 38));
+        g.fillRect(bx, by, bw/4, bh);
+        // right shadow
+        g.setColor(new Color(55, 32, 10, 55));
+        g.fillRect(bx+bw*3/4, by, bw/4, bh);
 
-        // Roof shingles
-        g.setColor(new Color(50, 30, 10, 100));
-        for (int row = 0; row < 3; row++) {
-            int indent = row * 6;
-            g.drawLine(bx - 8 + indent, by - h/3 + row * (h/3)/3,
-                       bx + bw + 8 - indent, by - h/3 + row * (h/3)/3);
-        }
-
-        // Broken door
-        g.setColor(new Color(80, 50, 20));
-        g.fillRoundRect(bx + bw/2 - 10, by + bh/2, 20, bh/2, 4, 4);
-        // Door crack
-        g.setColor(new Color(40, 20, 5));
+        // slightly-sagging roof
+        int[] rx2 = {bx-10, bx+bw/2+4, bx+bw+10};
+        int[] ry2 = {by, by-h/3, by};
+        GradientPaint roof = new GradientPaint(bx, by-h/3, new Color(98, 68, 36),
+                bx+bw, by, new Color(58, 38, 16));
+        g.setPaint(roof); g.fillPolygon(rx2, ry2, 3); g.setPaint(null);
+        // shingle rows
+        g.setColor(new Color(42, 26, 8, 120));
         g.setStroke(new BasicStroke(1.5f));
-        g.drawLine(bx + bw/2, by + bh/2, bx + bw/2 - 3, by + bh);
-        g.setStroke(new BasicStroke(1f));
-
-        // Small window
-        g.setColor(new Color(180, 220, 255, 160));
-        g.fillRect(bx + 6, by + 6, 14, 12);
-        g.setColor(new Color(100, 80, 50));
-        g.setStroke(new BasicStroke(2f));
-        g.drawRect(bx + 6, by + 6, 14, 12);
-        g.setStroke(new BasicStroke(1f));
-
-        // Chimney (crooked)
-        g.setColor(new Color(130, 90, 60));
-        int[] chx = {bx + bw - 20, bx + bw - 12, bx + bw - 10, bx + bw - 18};
-        int[] chy = {by - 5, by - 5, by - h/3 + 10, by - h/3 + 10};
-        g.fillPolygon(chx, chy, 4);
-
-        // Smoke puff
-        g.setColor(new Color(200, 200, 200, 80));
-        g.fillOval(bx + bw - 20, by - h/3 - 12, 10, 10);
-        g.setColor(new Color(200, 200, 200, 50));
-        g.fillOval(bx + bw - 16, by - h/3 - 20, 14, 14);
-
-        // Outline
-        g.setColor(new Color(60, 40, 15));
-        g.setStroke(new BasicStroke(2f));
-        g.drawRect(bx, by, bw, bh);
-        g.drawPolygon(rx, ry, 3);
-        g.setStroke(new BasicStroke(1f));
-
-        // Star badge
-        drawStarBadge(g, x + w - 18, y + 4, 1);
-    }
-
-    // ── STAGE 3-5: Simple House ──
-    private static void drawSimpleHouse(Graphics2D g, int x, int y, int w, int h) {
-        int bx = x + w/8, by = y + h*2/5, bw = w*3/4, bh = h*3/5;
-
-        // Ground shadow
-        g.setColor(new Color(0, 0, 0, 40));
-        g.fillOval(bx, by + bh - 4, bw, 12);
-
-        // Walls
-        GradientPaint wall = new GradientPaint(bx, by, new Color(245, 225, 185), bx, by + bh, new Color(210, 185, 145));
-        g.setPaint(wall); g.fillRect(bx, by, bw, bh); g.setPaint(null);
-
-        // Roof
-        int[] rx = {bx - 10, bx + bw/2, bx + bw + 10};
-        int[] ry = {by, by - h*2/5, by};
-        GradientPaint roof = new GradientPaint(bx, by - h*2/5, new Color(200, 80, 60), bx + bw, by, new Color(155, 50, 35));
-        g.setPaint(roof); g.fillPolygon(rx, ry, 3); g.setPaint(null);
-
-        // Roof highlight
-        g.setColor(new Color(255, 120, 100, 60));
-        g.fillPolygon(new int[]{bx-10, bx+bw/2, bx+bw/4}, new int[]{by, by-h*2/5, by}, 3);
-
-        // Chimney
-        g.setColor(new Color(160, 100, 70));
-        g.fillRect(bx + bw - 28, by - h*2/5 + 5, 16, h*2/5 + 5);
-        g.setColor(new Color(140, 85, 55));
-        g.fillRect(bx + bw - 31, by - h*2/5 + 3, 22, 7);
-        // Smoke
-        g.setColor(new Color(200, 200, 200, 70));
-        g.fillOval(bx + bw - 24, by - h*2/5 - 12, 12, 12);
-        g.setColor(new Color(200, 200, 200, 45));
-        g.fillOval(bx + bw - 20, by - h*2/5 - 22, 16, 16);
-
-        // Door
-        GradientPaint door = new GradientPaint(bx+bw/2-12, 0, new Color(120, 70, 30), bx+bw/2+12, 0, new Color(85, 50, 18));
-        g.setPaint(door); g.fillRoundRect(bx + bw/2 - 12, by + bh/2, 24, bh/2, 6, 6); g.setPaint(null);
-        // Doorknob
-        g.setColor(new Color(200, 170, 80));
-        g.fillOval(bx + bw/2 + 5, by + bh*3/4, 5, 5);
-
-        // Windows
-        drawCartoonWindow(g, bx + 8, by + 8, 28, 22);
-        drawCartoonWindow(g, bx + bw - 36, by + 8, 28, 22);
-
-        // Fence posts
-        g.setColor(new Color(200, 170, 110));
-        for (int i = 0; i <= 4; i++) {
-            int fx = bx - 10 + i * (bw + 20) / 4;
-            g.fillRoundRect(fx, by + bh - 5, 6, 18, 3, 3);
-        }
-        g.fillRect(bx - 10, by + bh + 2, bw + 20, 4);
-
-        // Outline
-        g.setColor(new Color(120, 90, 50));
-        g.setStroke(new BasicStroke(2f));
-        g.drawRect(bx, by, bw, bh);
-        g.drawPolygon(rx, ry, 3);
-        g.setStroke(new BasicStroke(1f));
-
-        drawStarBadge(g, x + w - 18, y + 4, 2);
-    }
-
-    // ── STAGE 6-8: Farm House ──
-    private static void drawFarmHouse(Graphics2D g, int x, int y, int w, int h) {
-        int bx = x + w/10, by = y + h/3, bw = w*4/5, bh = h*2/3;
-
-        // Ground
-        g.setColor(new Color(0, 0, 0, 40));
-        g.fillOval(bx, by + bh - 4, bw, 14);
-
-        // Main house walls
-        GradientPaint wall = new GradientPaint(bx, by, new Color(250, 230, 190), bx, by+bh, new Color(215, 190, 150));
-        g.setPaint(wall); g.fillRect(bx, by, bw, bh); g.setPaint(null);
-
-        // Brick pattern
-        g.setColor(new Color(180, 140, 100, 60));
-        for (int row = 0; row < 6; row++) {
-            int offsetX = (row % 2 == 0) ? 0 : 14;
-            for (int col = -1; col < bw/28 + 1; col++) {
-                int brickX = bx + col * 28 + offsetX;
-                int brickY = by + row * (bh/6);
-                g.drawRect(brickX, brickY, 26, bh/6 - 2);
-            }
-        }
-
-        // Side barn wing
-        int wingW = bw / 4, wingH = bh * 3 / 4;
-        GradientPaint barn = new GradientPaint(bx - wingW, by + bh - wingH, new Color(190, 55, 45),
-                bx, by + bh, new Color(145, 35, 28));
-        g.setPaint(barn); g.fillRect(bx - wingW, by + bh - wingH, wingW, wingH); g.setPaint(null);
-        // Barn roof
-        int[] brx = {bx - wingW - 5, bx - wingW/2, bx + 5};
-        int[] bry = {by + bh - wingH, by + bh - wingH - 25, by + bh - wingH};
-        g.setColor(new Color(80, 55, 30)); g.fillPolygon(brx, bry, 3);
-
-        // Main roof
-        int[] rx = {bx - 12, bx + bw/2, bx + bw + 12};
-        int[] ry = {by, by - h/3 + 5, by};
-        GradientPaint roof = new GradientPaint(bx, by - h/3, new Color(185, 65, 45), bx+bw, by, new Color(140, 42, 28));
-        g.setPaint(roof); g.fillPolygon(rx, ry, 3); g.setPaint(null);
-        // Shingles
-        g.setColor(new Color(100, 35, 18, 100));
         for (int i = 0; i < 4; i++) {
-            int indent = i * 8;
-            g.setStroke(new BasicStroke(1.5f));
-            g.drawLine(bx - 12 + indent, by - (h/3 - 5) * i / 3,
-                       bx + bw + 12 - indent, by - (h/3 - 5) * i / 3);
+            int indent = i*8;
+            int ry3 = by - (h/3)*(4-i)/4;
+            g.drawLine(bx-10+indent, ry3, bx+bw+10-indent, ry3);
         }
         g.setStroke(new BasicStroke(1f));
+        // roof highlight
+        g.setColor(new Color(135, 100, 58, 60));
+        g.fillPolygon(new int[]{bx-10, bx+bw/2+4, bx+bw/4}, new int[]{by, by-h/3, by}, 3);
+        // moss
+        g.setColor(new Color(58, 132, 38, 85));
+        g.fillOval(bx+bw/2-14, by-12, 28, 10);
+        g.fillOval(bx+bw/3-6, by-8, 18, 7);
 
-        // Chimney
-        g.setColor(new Color(155, 105, 65));
-        g.fillRect(bx + bw - 35, by - h/3 - 15, 18, h/3 + 18);
-        g.setColor(new Color(130, 85, 50));
-        g.fillRect(bx + bw - 38, by - h/3 - 18, 24, 8);
-        // Smoke
-        for (int s = 0; s < 3; s++) {
-            g.setColor(new Color(200, 200, 210, 60 - s * 15));
-            g.fillOval(bx + bw - 30 + s * 2, by - h/3 - 28 - s * 12, 12 + s * 4, 12 + s * 4);
+        // crooked chimney
+        Graphics2D gc = (Graphics2D) g.create();
+        gc.rotate(Math.toRadians(4), bx+bw-18, by-10);
+        drawChimney(gc, bx+bw-24, by-h/3+4, 16, h/3+10, new Color(132, 92, 60),
+                    new Color(112, 74, 46));
+        gc.dispose();
+        drawSmoke(g, bx+bw-16, by-h/3, 3);
+
+        // cracked window
+        drawWindow(g, bx+6, by+7, 20, 16, new Color(155, 198, 218, 175));
+        // crack on window glass
+        g.setColor(new Color(38, 28, 18, 160));
+        g.setStroke(new BasicStroke(1f));
+        g.drawLine(bx+8, by+8, bx+22, by+20);
+        g.setStroke(new BasicStroke(1f));
+
+        // broken door
+        drawDoor(g, bx+bw/2-10, by+bh/2, 20, bh/2, new Color(78, 48, 18));
+        // door crack
+        g.setColor(new Color(32, 16, 4, 170));
+        g.setStroke(new BasicStroke(1.2f));
+        g.drawLine(bx+bw/2, by+bh/2, bx+bw/2-5, by+bh);
+        g.setStroke(new BasicStroke(1f));
+
+        // outline
+        g.setColor(new Color(55, 36, 12));
+        g.setStroke(new BasicStroke(2f));
+        g.drawRect(bx, by, bw, bh);
+        g.drawPolygon(rx2, ry2, 3);
+        g.setStroke(new BasicStroke(1f));
+
+        drawStarBadge(g, x+w-2, y+6, 1);
+    }
+
+    // ── 1: SIMPLE HOUSE (stages 3-5) ─────────────────────────────────────────
+    private static void drawSimpleHouse(Graphics2D g, int x, int y, int w, int h) {
+        int bx = x+w/8, by = y+h*2/5, bw = w*3/4, bh = h*3/5;
+
+        g.setColor(new Color(0,0,0,38));
+        g.fillOval(bx-2, by+bh-2, bw+4, 12);
+
+        // cream walls with horizontal siding
+        GradientPaint wall = new GradientPaint(bx, by, new Color(252, 238, 202),
+                bx, by+bh, new Color(220, 195, 158));
+        g.setPaint(wall); g.fillRect(bx, by, bw, bh); g.setPaint(null);
+        g.setColor(new Color(185, 162, 118, 75));
+        g.setStroke(new BasicStroke(0.8f));
+        for (int i = 1; i < 8; i++) g.drawLine(bx, by+bh*i/8, bx+bw, by+bh*i/8);
+        g.setStroke(new BasicStroke(1f));
+
+        // left highlight / right shadow
+        g.setColor(new Color(255,245,215,42));
+        g.fillRect(bx, by, bw/5, bh);
+        g.setColor(new Color(55,35,12,42));
+        g.fillRect(bx+bw*4/5, by, bw/5, bh);
+
+        // terracotta roof
+        int[] rx2 = {bx-12, bx+bw/2, bx+bw+12};
+        int[] ry2 = {by, by-h*2/5, by};
+        GradientPaint roof = new GradientPaint(bx, by-h*2/5, new Color(212, 92, 68),
+                bx+bw, by, new Color(158, 52, 32));
+        g.setPaint(roof); g.fillPolygon(rx2, ry2, 3); g.setPaint(null);
+        // shingles
+        g.setColor(new Color(138, 42, 22, 80));
+        g.setStroke(new BasicStroke(1.2f));
+        for (int i = 0; i < 5; i++) {
+            int indent = i*7;
+            g.drawLine(bx-12+indent, by-(h*2/5)*(4-i)/4, bx+bw+12-indent, by-(h*2/5)*(4-i)/4);
         }
+        g.setStroke(new BasicStroke(1f));
+        // roof left highlight
+        g.setColor(new Color(255, 155, 135, 58));
+        g.fillPolygon(new int[]{bx-12, bx+bw/2, bx+bw/4}, new int[]{by, by-h*2/5, by}, 3);
+        // ridge cap
+        g.setColor(new Color(135, 40, 20));
+        g.setStroke(new BasicStroke(3f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g.drawLine(bx+bw/2, by-h*2/5, bx+bw/2, by);
+        g.setStroke(new BasicStroke(1f));
 
-        // Door
-        g.setPaint(new GradientPaint(bx+bw/2-14, 0, new Color(110, 65, 22), bx+bw/2+14, 0, new Color(80, 45, 15)));
-        g.fillRoundRect(bx + bw/2 - 14, by + bh/2, 28, bh/2, 6, 6); g.setPaint(null);
-        g.setColor(new Color(200, 160, 70)); g.fillOval(bx + bw/2 + 6, by + bh*3/4, 5, 5);
+        // chimney
+        drawChimney(g, bx+bw-32, by-h*2/5+6, 16, h*2/5+6,
+                    new Color(162, 112, 72), new Color(142, 90, 55));
+        drawSmoke(g, bx+bw-24, by-h*2/5, 3);
 
-        // Windows
-        drawCartoonWindow(g, bx + 10, by + 8, 32, 26);
-        drawCartoonWindow(g, bx + bw - 42, by + 8, 32, 26);
-
-        // Flower boxes under windows
-        g.setColor(new Color(150, 80, 40));
-        g.fillRect(bx + 6, by + 36, 40, 8);
-        g.fillRect(bx + bw - 46, by + 36, 40, 8);
-        // Flowers
-        Color[] fc = {new Color(255, 80, 80), new Color(255, 200, 50), new Color(200, 100, 255)};
+        // windows with flower boxes
+        drawWindow(g, bx+10, by+10, 30, 24, new Color(182, 222, 255, 205));
+        drawWindow(g, bx+bw-40, by+10, 30, 24, new Color(182, 222, 255, 205));
+        // flower boxes
+        g.setColor(new Color(142, 82, 36));
+        g.fillRoundRect(bx+3, by+36, 44, 8, 4, 4);
+        g.fillRoundRect(bx+bw-47, by+36, 44, 8, 4, 4);
+        Color[] fc = {new Color(255,85,85), new Color(255,205,55), new Color(205,85,225)};
         for (int fi = 0; fi < 3; fi++) {
+            // flower stem
+            g.setColor(new Color(48,142,28));
+            g.fillRect(bx+13+fi*14, by+28, 2, 10);
+            g.fillRect(bx+bw-45+fi*14, by+28, 2, 10);
+            // petals
             g.setColor(fc[fi]);
-            g.fillOval(bx + 10 + fi * 12, by + 28, 8, 8);
-            g.fillOval(bx + bw - 42 + fi * 12, by + 28, 8, 8);
+            g.fillOval(bx+11+fi*14, by+22, 9, 9);
+            g.fillOval(bx+bw-47+fi*14, by+22, 9, 9);
+            // center
+            g.setColor(new Color(255,235,80));
+            g.fillOval(bx+13+fi*14, by+24, 4, 4);
+            g.fillOval(bx+bw-45+fi*14, by+24, 4, 4);
         }
 
-        // Outline
-        g.setColor(new Color(100, 70, 35));
+        // door
+        drawDoor(g, bx+bw/2-14, by+bh/2, 28, bh/2, new Color(102, 64, 22));
+
+        // picket fence
+        g.setColor(new Color(242, 232, 210));
+        for (int i = 0; i <= 7; i++) {
+            int fx = bx-10+i*(bw+20)/7;
+            g.fillRoundRect(fx-2, by+bh+2, 7, 20, 3, 3);
+            // pointed tip
+            g.fillPolygon(new int[]{fx, fx+3, fx+7},
+                          new int[]{by+bh+2, by+bh-4, by+bh+2}, 3);
+        }
+        g.setColor(new Color(218, 208, 185));
+        g.fillRect(bx-10, by+bh+10, bw+20, 4);
+        g.fillRect(bx-10, by+bh+15, bw+20, 3);
+
+        // outline
+        g.setColor(new Color(118, 88, 48));
         g.setStroke(new BasicStroke(2f));
         g.drawRect(bx, by, bw, bh);
-        g.drawPolygon(rx, ry, 3);
+        g.drawPolygon(rx2, ry2, 3);
         g.setStroke(new BasicStroke(1f));
 
-        drawStarBadge(g, x + w - 18, y + 4, 3);
+        drawStarBadge(g, x+w-2, y+6, 2);
     }
 
-    // ── STAGE 9-11: Village ──
-    private static void drawVillage(Graphics2D g, int x, int y, int w, int h) {
-        // Draw two houses side by side like a village
-        int bx = x + 5, by = y + h/4, bw = w - 10, bh = h*3/4;
+    // ── 2: FARM HOUSE (stages 6-8) ────────────────────────────────────────────
+    private static void drawFarmHouse(Graphics2D g, int x, int y, int w, int h) {
+        int bx = x+w/10, by = y+h/3, bw = w*4/5, bh = h*2/3;
 
-        // Ground shadow
-        g.setColor(new Color(0, 0, 0, 40));
-        g.fillOval(bx, by + bh - 4, bw, 14);
+        g.setColor(new Color(0,0,0,42));
+        g.fillOval(bx-2, by+bh-2, bw+4, 14);
 
-        // Back house (smaller, behind)
-        int backW = bw * 2 / 5, backH = bh * 3 / 4;
-        int backX = bx + bw / 2 - backW / 2;
-        GradientPaint backWall = new GradientPaint(backX, by, new Color(200, 210, 230), backX, by + backH, new Color(160, 170, 195));
-        g.setPaint(backWall); g.fillRect(backX, by, backW, backH); g.setPaint(null);
-        int[] brx2 = {backX - 8, backX + backW/2, backX + backW + 8};
-        int[] bry2 = {by, by - h/5, by};
-        g.setColor(new Color(80, 60, 140)); g.fillPolygon(brx2, bry2, 3);
-        drawCartoonWindow(g, backX + 8, by + 8, 22, 18);
-        drawCartoonWindow(g, backX + backW - 30, by + 8, 22, 18);
-
-        // Left house
-        int lw = bw * 2 / 5, lh = bh * 4 / 5;
-        int lx = bx;
-        GradientPaint lWall = new GradientPaint(lx, by + bh - lh, new Color(240, 220, 180), lx, by + bh, new Color(205, 180, 140));
-        g.setPaint(lWall); g.fillRect(lx, by + bh - lh, lw, lh); g.setPaint(null);
-        int[] lrx = {lx - 8, lx + lw/2, lx + lw + 4};
-        int[] lry = {by + bh - lh, by + bh - lh - h/4, by + bh - lh};
-        g.setColor(new Color(190, 70, 50)); g.fillPolygon(lrx, lry, 3);
-        drawCartoonWindow(g, lx + 8, by + bh - lh + 8, 26, 20);
-        g.setPaint(new GradientPaint(lx+lw/2-10, 0, new Color(100,60,20), lx+lw/2+10, 0, new Color(70,40,10)));
-        g.fillRoundRect(lx + lw/2 - 10, by + bh - lh/2, 20, lh/2, 5, 5); g.setPaint(null);
-
-        // Right house
-        int rw = bw * 2 / 5, rh = bh * 4 / 5;
-        int rx2 = bx + bw - rw;
-        GradientPaint rWall = new GradientPaint(rx2, by + bh - rh, new Color(230, 215, 200), rx2, by + bh, new Color(195, 175, 155));
-        g.setPaint(rWall); g.fillRect(rx2, by + bh - rh, rw, rh); g.setPaint(null);
-        int[] rrx = {rx2 - 4, rx2 + rw/2, rx2 + rw + 8};
-        int[] rry = {by + bh - rh, by + bh - rh - h/4, by + bh - rh};
-        g.setColor(new Color(60, 100, 160)); g.fillPolygon(rrx, rry, 3);
-        drawCartoonWindow(g, rx2 + rw - 34, by + bh - rh + 8, 26, 20);
-        g.setPaint(new GradientPaint(rx2+rw/2-10, 0, new Color(100,60,20), rx2+rw/2+10, 0, new Color(70,40,10)));
-        g.fillRoundRect(rx2 + rw/2 - 10, by + bh - rh/2, 20, rh/2, 5, 5); g.setPaint(null);
-
-        // Path between houses
-        g.setColor(new Color(180, 155, 110, 140));
-        int[] px2 = {bx + bw/2 - 15, bx + bw/2 + 15, bx + bw/2 + 12, bx + bw/2 - 12};
-        int[] py2 = {by + bh - lh/2, by + bh - lh/2, by + bh, by + bh};
-        g.fillPolygon(px2, py2, 4);
-
-        // Outlines
-        g.setColor(new Color(80, 60, 40));
-        g.setStroke(new BasicStroke(1.5f));
-        g.drawRect(lx, by + bh - lh, lw, lh);
-        g.drawPolygon(lrx, lry, 3);
-        g.drawRect(rx2, by + bh - rh, rw, rh);
-        g.drawPolygon(rrx, rry, 3);
-        g.setStroke(new BasicStroke(1f));
-
-        drawStarBadge(g, x + w - 18, y + 4, 4);
-    }
-
-    // ── STAGE 12-14: Grand Farm ──
-    private static void drawGrandFarm(Graphics2D g, int x, int y, int w, int h) {
-        int bx = x + 4, by = y + h/5, bw = w - 8, bh = h*4/5;
-
-        g.setColor(new Color(0, 0, 0, 45));
-        g.fillOval(bx, by + bh - 4, bw, 14);
-
-        // Main large house
-        int mw = bw * 3 / 5, mh = bh;
-        int mx = bx + bw/2 - mw/2;
-        GradientPaint mWall = new GradientPaint(mx, by, new Color(250, 235, 200), mx, by+mh, new Color(215, 195, 158));
-        g.setPaint(mWall); g.fillRect(mx, by, mw, mh); g.setPaint(null);
-
-        // Stone base
-        g.setColor(new Color(170, 155, 130));
-        g.fillRect(mx, by + mh - 14, mw, 14);
-        g.setColor(new Color(140, 125, 105, 120));
-        for (int i = 0; i < 6; i++) g.drawRect(mx + 2 + i * (mw/6), by + mh - 14, mw/6 - 2, 12);
-
-        // Main roof
-        int[] rx = {mx - 14, mx + mw/2, mx + mw + 14};
-        int[] ry = {by, by - h/4, by};
-        GradientPaint roof = new GradientPaint(mx, by - h/4, new Color(180, 60, 40), mx+mw, by, new Color(140, 40, 25));
-        g.setPaint(roof); g.fillPolygon(rx, ry, 3); g.setPaint(null);
-        // Roof ridge
-        g.setColor(new Color(100, 30, 15));
-        g.setStroke(new BasicStroke(3f));
-        g.drawLine(mx + mw/2, by - h/4, mx + mw/2, by);
-        g.setStroke(new BasicStroke(1f));
-
-        // Side towers
-        for (int side = 0; side <= 1; side++) {
-            int tx = side == 0 ? bx : bx + bw - bw/5;
-            int tw = bw / 5, th = bh * 3 / 4;
-            GradientPaint tWall = new GradientPaint(tx, by + bh - th, new Color(220, 200, 165),
-                    tx + tw, by + bh, new Color(185, 165, 130));
-            g.setPaint(tWall); g.fillRect(tx, by + bh - th, tw, th); g.setPaint(null);
-            // Tower cone roof
-            int[] trx = {tx - 5, tx + tw/2, tx + tw + 5};
-            int[] try2 = {by + bh - th, by + bh - th - h/5, by + bh - th};
-            g.setColor(new Color(60, 100, 160)); g.fillPolygon(trx, try2, 3);
-            // Tower window
-            drawCartoonWindow(g, tx + tw/2 - 10, by + bh - th + 8, 20, 16);
-            g.setColor(new Color(80, 60, 40));
-            g.setStroke(new BasicStroke(1.5f));
-            g.drawRect(tx, by + bh - th, tw, th);
-            g.setStroke(new BasicStroke(1f));
-        }
-
-        // Chimney pair
-        g.setColor(new Color(160, 110, 70));
-        g.fillRect(mx + mw - 40, by - h/4 + 5, 14, h/4 + 8);
-        g.fillRect(mx + mw - 25, by - h/4 + 10, 12, h/4 + 3);
-        g.setColor(new Color(135, 90, 55));
-        g.fillRect(mx + mw - 43, by - h/4 + 3, 20, 7);
-        g.fillRect(mx + mw - 28, by - h/4 + 8, 18, 6);
-
-        // Windows
-        drawCartoonWindow(g, mx + 10, by + 10, 34, 26);
-        drawCartoonWindow(g, mx + mw - 44, by + 10, 34, 26);
-        drawCartoonWindow(g, mx + mw/2 - 14, by + 10, 28, 22);
-
-        // Front door double
-        g.setColor(new Color(100, 60, 20));
-        g.fillRoundRect(mx + mw/2 - 18, by + mh/2, 16, mh/2, 5, 5);
-        g.fillRoundRect(mx + mw/2 + 2, by + mh/2, 16, mh/2, 5, 5);
-        g.setColor(new Color(195, 160, 70));
-        g.fillOval(mx + mw/2 - 5, by + mh*3/4, 5, 5);
-        g.fillOval(mx + mw/2 + 4, by + mh*3/4, 5, 5);
-
-        // Columns
-        g.setColor(new Color(240, 230, 210));
-        for (int c = 0; c < 2; c++) {
-            int colX = mx + mw/2 - 22 + c * 30;
-            g.fillRect(colX, by + mh/2 - 10, 6, mh/2 + 10);
-            g.setColor(new Color(200, 190, 170)); g.fillOval(colX - 3, by + mh/2 - 14, 12, 8);
-            g.setColor(new Color(240, 230, 210));
-        }
-
-        // Outline
-        g.setColor(new Color(100, 75, 40));
-        g.setStroke(new BasicStroke(2f));
-        g.drawRect(mx, by, mw, mh);
-        g.drawPolygon(rx, ry, 3);
-        g.setStroke(new BasicStroke(1f));
-
-        drawStarBadge(g, x + w - 18, y + 4, 5);
-    }
-
-    // ── STAGE 15-17: Castle Farm ──
-    private static void drawCastleFarm(Graphics2D g, int x, int y, int w, int h) {
-        int bx = x + 2, by = y + h/6, bw = w - 4, bh = h*5/6;
-
-        g.setColor(new Color(0, 0, 0, 50));
-        g.fillOval(bx, by + bh - 4, bw, 16);
-
-        // Castle wall — stone grey
-        GradientPaint stone = new GradientPaint(bx, by, new Color(185, 185, 195), bx, by+bh, new Color(145, 145, 160));
-        g.setPaint(stone); g.fillRect(bx, by, bw, bh); g.setPaint(null);
-
-        // Stone block pattern
-        g.setColor(new Color(120, 120, 135, 100));
-        g.setStroke(new BasicStroke(1f));
+        // main walls – warm white with subtle brick texture
+        GradientPaint wall = new GradientPaint(bx, by, new Color(252, 244, 228),
+                bx, by+bh, new Color(218, 204, 175));
+        g.setPaint(wall); g.fillRect(bx, by, bw, bh); g.setPaint(null);
+        // brick pattern
+        g.setColor(new Color(192, 155, 112, 58));
+        g.setStroke(new BasicStroke(0.7f));
         for (int row = 0; row < 7; row++) {
-            int offsetX = (row % 2 == 0) ? 0 : 16;
-            for (int col = -1; col < bw/32 + 1; col++) {
-                g.drawRect(bx + col * 32 + offsetX, by + row * (bh/7), 30, bh/7 - 1);
-            }
+            int offX = (row%2==0) ? 0 : 15;
+            for (int col = -1; col < bw/30+1; col++)
+                g.drawRoundRect(bx+col*30+offX, by+row*(bh/7), 28, bh/7-1, 2, 2);
         }
         g.setStroke(new BasicStroke(1f));
 
-        // Battlements (crenellations) on top
-        g.setColor(new Color(170, 170, 182));
-        for (int cr = 0; cr < bw/16; cr++) {
-            if (cr % 2 == 0) g.fillRect(bx + cr * 16, by - 14, 14, 14);
-        }
+        // side barn wing
+        int wgW = bw/4, wgH = bh*3/4;
+        GradientPaint barnG = new GradientPaint(bx-wgW, by+bh-wgH,
+                new Color(198, 60, 48), bx, by+bh, new Color(148, 36, 26));
+        g.setPaint(barnG); g.fillRect(bx-wgW, by+bh-wgH, wgW, wgH); g.setPaint(null);
+        // barn plank lines
+        g.setColor(new Color(100, 22, 14, 105));
+        g.setStroke(new BasicStroke(1.2f));
+        for (int i = 1; i < 5; i++) g.drawLine(bx-wgW, by+bh-wgH+wgH*i/5, bx, by+bh-wgH+wgH*i/5);
+        g.setStroke(new BasicStroke(1f));
+        // X brace on barn
+        g.setColor(new Color(125, 38, 22, 140));
+        g.setStroke(new BasicStroke(2f));
+        g.drawLine(bx-wgW+2, by+bh-wgH, bx-2, by+bh);
+        g.drawLine(bx-2, by+bh-wgH, bx-wgW+2, by+bh);
+        g.setStroke(new BasicStroke(1f));
+        // barn wing roof
+        int[] brx2 = {bx-wgW-6, bx-wgW/2, bx+6};
+        int[] bry2 = {by+bh-wgH, by+bh-wgH-28, by+bh-wgH};
+        GradientPaint bRoof = new GradientPaint(bx-wgW, by+bh-wgH-28,
+                new Color(80, 55, 28), bx, by+bh-wgH, new Color(50, 30, 12));
+        g.setPaint(bRoof); g.fillPolygon(brx2, bry2, 3); g.setPaint(null);
+        // loft window
+        g.setColor(new Color(28, 10, 6, 210));
+        g.fillOval(bx-wgW/2-9, by+bh-wgH-20, 18, 16);
+        g.setColor(new Color(155, 195, 215, 120));
+        g.fillOval(bx-wgW/2-7, by+bh-wgH-18, 14, 12);
 
-        // Corner towers
-        int[] towerPositions = {bx, bx + bw - 22};
-        for (int tp : towerPositions) {
-            GradientPaint tWall = new GradientPaint(tp, by - 20, new Color(170, 170, 185),
-                    tp + 22, by + bh, new Color(130, 130, 148));
-            g.setPaint(tWall); g.fillRect(tp, by - 20, 22, bh + 20); g.setPaint(null);
-            // Tower crenellations
-            g.setColor(new Color(155, 155, 170));
-            for (int ct = 0; ct < 3; ct++) {
-                if (ct % 2 == 0) g.fillRect(tp + ct * 8, by - 32, 7, 13);
-            }
-            // Tower windows (arrow slits)
-            g.setColor(new Color(40, 40, 60));
-            g.fillRect(tp + 8, by - 5, 5, 14);
-            g.fillRect(tp + 8, by + 30, 5, 14);
-            g.setColor(new Color(80, 60, 40));
-            g.setStroke(new BasicStroke(1.5f));
-            g.drawRect(tp, by - 20, 22, bh + 20);
-            g.setStroke(new BasicStroke(1f));
+        // main roof – deep red
+        int[] rx2 = {bx-14, bx+bw/2, bx+bw+14};
+        int[] ry2 = {by, by-h/3+6, by};
+        GradientPaint roofG = new GradientPaint(bx, by-h/3, new Color(192, 65, 46),
+                bx+bw, by, new Color(138, 40, 24));
+        g.setPaint(roofG); g.fillPolygon(rx2, ry2, 3); g.setPaint(null);
+        // shingle rows
+        g.setColor(new Color(100, 32, 16, 105));
+        g.setStroke(new BasicStroke(1.4f));
+        for (int i = 0; i < 6; i++) {
+            int indent = i*9;
+            int ry3 = by-(h/3-6)*(5-i)/5;
+            g.drawLine(bx-14+indent, ry3, bx+bw+14-indent, ry3);
         }
+        g.setStroke(new BasicStroke(1f));
+        // ridge cap
+        g.setColor(new Color(115, 35, 18));
+        g.setStroke(new BasicStroke(4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g.drawLine(bx+bw/2, by-h/3+6, bx+bw/2, by);
+        g.setStroke(new BasicStroke(1f));
 
-        // Central tower taller
-        int ctW = bw / 3, ctX = bx + bw/2 - ctW/2;
-        GradientPaint ctWall = new GradientPaint(ctX, by - 35, new Color(175, 175, 188),
-                ctX + ctW, by, new Color(135, 135, 152));
-        g.setPaint(ctWall); g.fillRect(ctX, by - 35, ctW, 35); g.setPaint(null);
-        // Central tower cone
-        int[] crx = {ctX - 5, ctX + ctW/2, ctX + ctW + 5};
-        int[] cry = {by - 35, by - 35 - h/5, by - 35};
-        g.setColor(new Color(50, 120, 60)); g.fillPolygon(crx, cry, 3);
-        // Flag
-        g.setColor(new Color(200, 50, 50));
+        // chimney pair
+        drawChimney(g, bx+bw-38, by-h/3-10, 15, h/3+14,
+                    new Color(160, 110, 70), new Color(132, 85, 50));
+        drawChimney(g, bx+bw-22, by-h/3-5, 13, h/3+9,
+                    new Color(155, 105, 65), new Color(128, 82, 48));
+        drawSmoke(g, bx+bw-30, by-h/3, 3);
+
+        // windows
+        drawWindow(g, bx+10, by+12, 34, 28, new Color(198, 230, 255, 205));
+        drawWindow(g, bx+bw-46, by+12, 34, 28, new Color(198, 230, 255, 205));
+
+        // porch gable
+        g.setColor(new Color(138, 95, 40));
+        g.fillPolygon(new int[]{bx+bw/2-20, bx+bw/2, bx+bw/2+20},
+                      new int[]{by+bh/2-6, by+bh/2-16, by+bh/2-6}, 3);
+        g.setColor(new Color(175, 128, 65));
+        g.fillRect(bx+bw/2-18, by+bh/2-6, 36, 4);
+
+        drawDoor(g, bx+bw/2-15, by+bh/2, 30, bh/2, new Color(112, 68, 24));
+
+        // outline
+        g.setColor(new Color(98, 68, 32));
+        g.setStroke(new BasicStroke(2f));
+        g.drawRect(bx, by, bw, bh);
+        g.drawPolygon(rx2, ry2, 3);
+        g.setStroke(new BasicStroke(1f));
+
+        drawStarBadge(g, x+w-2, y+6, 3);
+    }
+
+    // ── 3: VILLAGE (stages 9-11) ──────────────────────────────────────────────
+    private static void drawVillage(Graphics2D g, int x, int y, int w, int h) {
+        int bx = x+4, by = y+h/4, bw = w-8, bh = h*3/4;
+        Color glass = new Color(198, 230, 255, 205);
+
+        g.setColor(new Color(0,0,0,42));
+        g.fillOval(bx-2, by+bh-2, bw+4, 14);
+
+        // back centre house
+        int backW = bw*2/5, backH = bh*3/4;
+        int backX = bx+bw/2-backW/2;
+        GradientPaint bkW = new GradientPaint(backX, by, new Color(212, 220, 240),
+                backX, by+backH, new Color(165, 175, 205));
+        g.setPaint(bkW); g.fillRect(backX, by, backW, backH); g.setPaint(null);
+        int[] bkrx = {backX-10, backX+backW/2, backX+backW+10};
+        int[] bkry = {by, by-h/5, by};
+        GradientPaint bkRoof = new GradientPaint(backX, by-h/5, new Color(88, 65, 152),
+                backX+backW, by, new Color(62, 42, 118));
+        g.setPaint(bkRoof); g.fillPolygon(bkrx, bkry, 3); g.setPaint(null);
+        drawWindow(g, backX+7, by+9, 24, 19, glass);
+        drawWindow(g, backX+backW-31, by+9, 24, 19, glass);
+        drawDoor(g, backX+backW/2-9, by+backH-28, 18, 28, new Color(95, 58, 18));
+        g.setColor(new Color(62, 42, 118));
         g.setStroke(new BasicStroke(1.5f));
-        g.drawLine(ctX + ctW/2, by - 35 - h/5, ctX + ctW/2, by - 35 - h/5 + 20);
-        g.setStroke(new BasicStroke(1f));
-        int[] flagX = {ctX + ctW/2, ctX + ctW/2 + 12, ctX + ctW/2};
-        int[] flagY = {by - 35 - h/5, by - 35 - h/5 + 6, by - 35 - h/5 + 12};
-        g.fillPolygon(flagX, flagY, 3);
-
-        // Gate arch
-        g.setColor(new Color(40, 35, 50));
-        g.fillArc(bx + bw/2 - 20, by + bh/3, 40, 40, 0, 180);
-        g.fillRect(bx + bw/2 - 20, by + bh/3 + 20, 40, bh*2/3 - 20);
-        // Portcullis bars
-        g.setColor(new Color(80, 70, 90));
-        g.setStroke(new BasicStroke(2f));
-        for (int bar = 0; bar < 3; bar++)
-            g.drawLine(bx + bw/2 - 16 + bar * 10, by + bh/3 + 5,
-                       bx + bw/2 - 16 + bar * 10, by + bh - 2);
-        g.drawLine(bx + bw/2 - 18, by + bh/3 + 20, bx + bw/2 + 18, by + bh/3 + 20);
+        g.drawPolygon(bkrx, bkry, 3);
         g.setStroke(new BasicStroke(1f));
 
-        // Main windows
-        drawCartoonWindow(g, bx + 28, by + 12, 28, 22);
-        drawCartoonWindow(g, bx + bw - 56, by + 12, 28, 22);
+        // left house
+        int lw2 = bw*2/5, lh = bh*4/5, lx = bx;
+        GradientPaint lW = new GradientPaint(lx, by+bh-lh, new Color(248, 228, 188),
+                lx, by+bh, new Color(210, 185, 145));
+        g.setPaint(lW); g.fillRect(lx, by+bh-lh, lw2, lh); g.setPaint(null);
+        int[] lrx = {lx-10, lx+lw2/2, lx+lw2+5};
+        int[] lry = {by+bh-lh, by+bh-lh-h/4, by+bh-lh};
+        GradientPaint lRoof = new GradientPaint(lx, by+bh-lh-h/4, new Color(198, 75, 52),
+                lx+lw2, by+bh-lh, new Color(152, 48, 30));
+        g.setPaint(lRoof); g.fillPolygon(lrx, lry, 3); g.setPaint(null);
+        drawWindow(g, lx+9, by+bh-lh+9, 28, 22, glass);
+        drawDoor(g, lx+lw2/2-11, by+bh-lh+lh/2, 22, lh/2, new Color(102, 62, 18));
+        g.setColor(new Color(152, 48, 30));
+        g.setStroke(new BasicStroke(1.5f));
+        g.drawPolygon(lrx, lry, 3); g.drawRect(lx, by+bh-lh, lw2, lh);
+        g.setStroke(new BasicStroke(1f));
+        // left chimney
+        drawChimney(g, lx+lw2-20, by+bh-lh-h/4+5, 12, h/4+8,
+                    new Color(158, 108, 68), new Color(130, 85, 52));
+        drawSmoke(g, lx+lw2-14, by+bh-lh-h/4, 2);
 
-        // Moat hint
-        g.setPaint(new GradientPaint(bx, by + bh, new Color(80, 130, 200, 180),
-                bx, by + bh + 10, new Color(50, 100, 180, 100)));
-        g.fillRect(bx, by + bh, bw, 10); g.setPaint(null);
-
-        // Outline
-        g.setColor(new Color(80, 80, 100));
-        g.setStroke(new BasicStroke(2f));
-        g.drawRect(bx, by, bw, bh);
+        // right house
+        int rw2 = bw*2/5, rh = bh*4/5, rx3 = bx+bw-rw2;
+        GradientPaint rW = new GradientPaint(rx3, by+bh-rh, new Color(238, 220, 208),
+                rx3, by+bh, new Color(200, 180, 160));
+        g.setPaint(rW); g.fillRect(rx3, by+bh-rh, rw2, rh); g.setPaint(null);
+        int[] rrx = {rx3-5, rx3+rw2/2, rx3+rw2+10};
+        int[] rry = {by+bh-rh, by+bh-rh-h/4, by+bh-rh};
+        GradientPaint rRoof = new GradientPaint(rx3, by+bh-rh-h/4, new Color(60, 108, 168),
+                rx3+rw2, by+bh-rh, new Color(38, 80, 135));
+        g.setPaint(rRoof); g.fillPolygon(rrx, rry, 3); g.setPaint(null);
+        drawWindow(g, rx3+rw2-38, by+bh-rh+9, 28, 22, glass);
+        drawDoor(g, rx3+rw2/2-11, by+bh-rh+rh/2, 22, rh/2, new Color(102, 62, 18));
+        g.setColor(new Color(38, 80, 135));
+        g.setStroke(new BasicStroke(1.5f));
+        g.drawPolygon(rrx, rry, 3); g.drawRect(rx3, by+bh-rh, rw2, rh);
         g.setStroke(new BasicStroke(1f));
 
-        drawStarBadge(g, x + w - 18, y + 4, 6);
+        // cobblestone path
+        g.setColor(new Color(175, 158, 118, 158));
+        int[] pathX = {bx+bw/2-15, bx+bw/2+15, bx+bw/2+12, bx+bw/2-12};
+        int[] pathY = {by+bh-lh/2, by+bh-lh/2, by+bh, by+bh};
+        g.fillPolygon(pathX, pathY, 4);
+        g.setColor(new Color(148, 130, 92, 78));
+        for (int ci = 0; ci < 5; ci++)
+            g.fillOval(bx+bw/2-6+ci*3, by+bh-18+ci*4, 6, 4);
+
+        drawStarBadge(g, x+w-2, y+6, 4);
     }
 
-    // ── STAGE 18-19: Royal Palace ──
-    private static void drawRoyalPalace(Graphics2D g, int x, int y, int w, int h) {
-        int bx = x + 2, by = y + h/8, bw = w - 4, bh = h*7/8;
+    // ── 4: GRAND FARM (stages 12-14) ─────────────────────────────────────────
+    private static void drawGrandFarm(Graphics2D g, int x, int y, int w, int h) {
+        int bx = x+4, by = y+h/5, bw = w-8, bh = h*4/5;
+        Color glass = new Color(198, 230, 255, 205);
 
-        g.setColor(new Color(0, 0, 0, 55));
-        g.fillOval(bx, by + bh - 4, bw, 18);
+        g.setColor(new Color(0,0,0,46));
+        g.fillOval(bx-2, by+bh-2, bw+4, 16);
 
-        // Grand marble walls
-        GradientPaint marble = new GradientPaint(bx, by, new Color(245, 240, 220), bx + bw, by + bh, new Color(210, 205, 185));
-        g.setPaint(marble); g.fillRect(bx, by, bw, bh); g.setPaint(null);
+        // main body
+        int mw = bw*3/5, mx = bx+bw/2-mw/2;
+        GradientPaint mW = new GradientPaint(mx, by, new Color(252, 240, 215),
+                mx, by+bh, new Color(218, 198, 162));
+        g.setPaint(mW); g.fillRect(mx, by, mw, bh); g.setPaint(null);
 
-        // Marble veins
-        g.setColor(new Color(190, 185, 165, 60));
-        g.setStroke(new BasicStroke(1f));
-        for (int v = 0; v < 5; v++) {
-            g.drawLine(bx + v * (bw/5), by, bx + v * (bw/5) + 10, by + bh);
+        // quoin stones at corners
+        g.setColor(new Color(178, 155, 120));
+        for (int qi = 0; qi < 6; qi++) {
+            g.fillRect(mx-3, by+qi*(bh/6), 9, bh/12);
+            g.fillRect(mx+mw-6, by+qi*(bh/6), 9, bh/12);
+            // quoin highlight
+            g.setColor(new Color(212, 195, 162));
+            g.fillRect(mx-2, by+qi*(bh/6), 2, bh/12);
+            g.setColor(new Color(178, 155, 120));
         }
+
+        // stone base course
+        g.setColor(new Color(168, 152, 122));
+        g.fillRect(mx, by+bh-16, mw, 16);
+        g.setColor(new Color(142, 125, 98, 135));
+        g.setStroke(new BasicStroke(0.8f));
+        for (int i = 0; i < 7; i++) g.drawRect(mx+2+i*(mw/7), by+bh-16, mw/7-2, 14);
         g.setStroke(new BasicStroke(1f));
 
-        // Gold trim
-        g.setColor(new Color(220, 180, 40));
-        g.fillRect(bx, by + bh - 12, bw, 12);
-        g.fillRect(bx, by, bw, 8);
-
-        // Five spire towers
-        int[] spireX = {bx, bx + bw/4, bx + bw/2 - 15, bx + bw*3/4, bx + bw - 22};
-        int[] spireH = {bh*2/3, bh*3/5, bh*4/5, bh*3/5, bh*2/3};
-        Color[] spireColors = {
-            new Color(60, 110, 180), new Color(80, 160, 80),
-            new Color(180, 50, 50),
-            new Color(80, 160, 80), new Color(60, 110, 180)
-        };
-        for (int sp = 0; sp < 5; sp++) {
-            int sw = 22, sh = spireH[sp];
-            int sx = spireX[sp];
-            GradientPaint sWall = new GradientPaint(sx, by + bh - sh, new Color(230, 225, 210),
-                    sx + sw, by + bh, new Color(195, 190, 175));
-            g.setPaint(sWall); g.fillRect(sx, by + bh - sh, sw, sh); g.setPaint(null);
-            // Spire cone
-            int[] srx = {sx - 4, sx + sw/2, sx + sw + 4};
-            int[] sry = {by + bh - sh, by + bh - sh - h/4, by + bh - sh};
-            g.setColor(spireColors[sp]); g.fillPolygon(srx, sry, 3);
-            // Gold tip
-            g.setColor(new Color(255, 215, 0));
-            g.fillOval(sx + sw/2 - 3, by + bh - sh - h/4 - 4, 6, 6);
-            // Spire window
-            drawCartoonWindow(g, sx + 4, by + bh - sh + 6, 14, 12);
-            g.setColor(new Color(100, 90, 70));
+        // side towers
+        int twW = bw/5;
+        for (int side = 0; side <= 1; side++) {
+            int tx = side==0 ? bx : bx+bw-twW;
+            int twH = bh*3/4;
+            GradientPaint tW = new GradientPaint(tx, by+bh-twH, new Color(230, 210, 175),
+                    tx+twW, by+bh, new Color(192, 170, 135));
+            g.setPaint(tW); g.fillRect(tx, by+bh-twH, twW, twH); g.setPaint(null);
+            // tower cone roof
+            int[] trx = {tx-6, tx+twW/2, tx+twW+6};
+            int[] try2 = {by+bh-twH, by+bh-twH-h/5, by+bh-twH};
+            GradientPaint tRoof = new GradientPaint(tx, by+bh-twH-h/5, new Color(62, 105, 168),
+                    tx+twW, by+bh-twH, new Color(40, 78, 132));
+            g.setPaint(tRoof); g.fillPolygon(trx, try2, 3); g.setPaint(null);
+            // weather vane
+            g.setColor(new Color(182, 142, 32));
             g.setStroke(new BasicStroke(1.5f));
-            g.drawRect(sx, by + bh - sh, sw, sh);
+            g.drawLine(tx+twW/2, by+bh-twH-h/5, tx+twW/2, by+bh-twH-h/5-14);
+            g.setStroke(new BasicStroke(1f));
+            g.fillOval(tx+twW/2-3, by+bh-twH-h/5-16, 6, 6);
+            // arrow on vane
+            g.setColor(new Color(218, 178, 38));
+            g.fillPolygon(new int[]{tx+twW/2, tx+twW/2+8, tx+twW/2},
+                          new int[]{by+bh-twH-h/5-8, by+bh-twH-h/5-11, by+bh-twH-h/5-14}, 3);
+            drawWindow(g, tx+twW/2-11, by+bh-twH+7, 22, 17, glass);
+            g.setColor(new Color(80, 58, 28));
+            g.setStroke(new BasicStroke(1.5f));
+            g.drawRect(tx, by+bh-twH, twW, twH);
+            g.drawPolygon(trx, try2, 3);
             g.setStroke(new BasicStroke(1f));
         }
 
-        // Grand arched entrance
-        g.setColor(new Color(180, 145, 60));
-        g.fillRect(bx + bw/2 - 22, by + bh/2 - 10, 44, 8); // arch header
-        g.setColor(new Color(110, 75, 25));
-        g.fillArc(bx + bw/2 - 22, by + bh/3, 44, 44, 0, 180);
-        g.fillRect(bx + bw/2 - 22, by + bh/3 + 22, 44, bh*2/3 - 22);
-        // Door gold knobs
-        g.setColor(new Color(220, 180, 40));
-        g.fillOval(bx + bw/2 - 5, by + bh*2/3, 7, 7);
-        g.fillOval(bx + bw/2 + 2, by + bh*2/3, 7, 7);
+        // main roof
+        int[] rx2 = {mx-16, mx+mw/2, mx+mw+16};
+        int[] ry2 = {by, by-h/4, by};
+        GradientPaint roofG = new GradientPaint(mx, by-h/4, new Color(185, 62, 40),
+                mx+mw, by, new Color(140, 38, 22));
+        g.setPaint(roofG); g.fillPolygon(rx2, ry2, 3); g.setPaint(null);
+        // shingles
+        g.setColor(new Color(105, 30, 14, 110));
+        g.setStroke(new BasicStroke(1.3f));
+        for (int i = 0; i < 5; i++) {
+            int indent = i*9;
+            g.drawLine(mx-16+indent, by-(h/4)*(5-i)/5, mx+mw+16-indent, by-(h/4)*(5-i)/5);
+        }
+        g.setStroke(new BasicStroke(1f));
+        // ridge tile row
+        g.setColor(new Color(105, 30, 14));
+        g.setStroke(new BasicStroke(4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g.drawLine(mx+mw/2, by-h/4, mx+mw/2, by);
+        g.drawLine(mx-16, by, mx+mw+16, by);
+        g.setStroke(new BasicStroke(1f));
 
-        // Columns
-        for (int col = 0; col < 4; col++) {
-            int colX = bx + bw/2 - 45 + col * 28;
-            g.setColor(new Color(240, 235, 215));
-            g.fillRect(colX, by + bh/3 + 20, 8, bh*2/3 - 20);
-            g.setColor(new Color(220, 180, 40));
-            g.fillOval(colX - 3, by + bh/3 + 18, 14, 6);
-            g.fillOval(colX - 3, by + bh - 8, 14, 6);
+        // chimney pair
+        drawChimney(g, mx+mw-44, by-h/4, 15, h/4+10, new Color(160, 110, 70), new Color(130, 85, 52));
+        drawChimney(g, mx+mw-28, by-h/4+5, 13, h/4+5, new Color(155, 105, 65), new Color(128, 80, 50));
+        drawSmoke(g, mx+mw-36, by-h/4, 3);
+
+        // windows
+        drawWindow(g, mx+12, by+12, 36, 30, glass);
+        drawWindow(g, mx+mw-50, by+12, 36, 30, glass);
+        drawWindow(g, mx+mw/2-15, by+12, 30, 24, glass);
+
+        // columns
+        g.setColor(new Color(242, 235, 218));
+        g.fillRect(mx+mw/2-24, by+bh/2-14, 7, bh/2+14);
+        g.fillRect(mx+mw/2+17, by+bh/2-14, 7, bh/2+14);
+        // column caps
+        g.setColor(new Color(200, 192, 170));
+        g.fillRoundRect(mx+mw/2-28, by+bh/2-16, 15, 7, 4, 4);
+        g.fillRoundRect(mx+mw/2+13, by+bh/2-16, 15, 7, 4, 4);
+        // column bases
+        g.fillRoundRect(mx+mw/2-28, by+bh-12, 15, 7, 4, 4);
+        g.fillRoundRect(mx+mw/2+13, by+bh-12, 15, 7, 4, 4);
+
+        drawDoor(g, mx+mw/2-18, by+bh/2, 17, bh/2, new Color(102, 62, 18));
+        drawDoor(g, mx+mw/2+1,  by+bh/2, 17, bh/2, new Color(102, 62, 18));
+
+        // outline
+        g.setColor(new Color(98, 72, 36));
+        g.setStroke(new BasicStroke(2f));
+        g.drawRect(mx, by, mw, bh);
+        g.drawPolygon(rx2, ry2, 3);
+        g.setStroke(new BasicStroke(1f));
+
+        drawStarBadge(g, x+w-2, y+6, 5);
+    }
+
+    // ── 5: CASTLE FARM (stages 15-17) ─────────────────────────────────────────
+    private static void drawCastleFarm(Graphics2D g, int x, int y, int w, int h) {
+        int bx = x+2, by = y+h/6, bw = w-4, bh = h*5/6;
+        Color glass = new Color(198, 228, 255, 205);
+
+        g.setColor(new Color(0,0,0,52));
+        g.fillOval(bx-2, by+bh-2, bw+4, 18);
+
+        // stone wall
+        GradientPaint stone = new GradientPaint(bx, by, new Color(195, 192, 205),
+                bx+bw, by+bh, new Color(150, 148, 165));
+        g.setPaint(stone); g.fillRect(bx, by, bw, bh); g.setPaint(null);
+        // stone block grid
+        g.setColor(new Color(118, 115, 132, 100));
+        g.setStroke(new BasicStroke(0.9f));
+        for (int row = 0; row < 8; row++) {
+            int offX = (row%2==0) ? 0 : 19;
+            for (int col = -1; col < bw/38+1; col++)
+                g.drawRoundRect(bx+col*38+offX, by+row*(bh/8), 36, bh/8-1, 2, 2);
+        }
+        g.setStroke(new BasicStroke(1f));
+
+        // crenellations
+        g.setColor(new Color(178, 175, 192));
+        for (int cr = 0; cr < bw/20; cr++)
+            if (cr%2==0) g.fillRect(bx+cr*20, by-15, 18, 15);
+
+        // corner towers
+        int[] tPos = {bx, bx+bw-26};
+        for (int tp : tPos) {
+            GradientPaint tW = new GradientPaint(tp, by-24, new Color(178, 175, 192),
+                    tp+26, by+bh, new Color(135, 132, 152));
+            g.setPaint(tW); g.fillRect(tp, by-24, 26, bh+24); g.setPaint(null);
+            // tower crenellations
+            g.setColor(new Color(162, 158, 178));
+            for (int ct = 0; ct < 4; ct++)
+                if (ct%2==0) g.fillRect(tp+ct*7, by-36, 7, 14);
+            // arrow slits
+            g.setColor(new Color(38, 35, 55));
+            g.fillRoundRect(tp+10, by-10, 5, 18, 2, 2);
+            g.fillRoundRect(tp+10, by+35, 5, 18, 2, 2);
+            // tower outline
+            g.setColor(new Color(82, 80, 102));
+            g.setStroke(new BasicStroke(1.8f));
+            g.drawRect(tp, by-24, 26, bh+24);
+            g.setStroke(new BasicStroke(1f));
         }
 
-        // Ornate windows
-        drawCartoonWindow(g, bx + 28, by + 10, 32, 26);
-        drawCartoonWindow(g, bx + bw - 60, by + 10, 32, 26);
-        drawCartoonWindow(g, bx + 65, by + 10, 28, 22);
-        drawCartoonWindow(g, bx + bw - 93, by + 10, 28, 22);
+        // central tower – taller
+        int ctW = bw/3, ctX = bx+bw/2-ctW/2;
+        GradientPaint ctW2 = new GradientPaint(ctX, by-42, new Color(182, 180, 198),
+                ctX+ctW, by, new Color(140, 138, 158));
+        g.setPaint(ctW2); g.fillRect(ctX, by-42, ctW, 42); g.setPaint(null);
+        // conical roof
+        int[] crx2 = {ctX-7, ctX+ctW/2, ctX+ctW+7};
+        int[] cry2 = {by-42, by-42-h/4, by-42};
+        GradientPaint coneG2 = new GradientPaint(ctX, by-42-h/4, new Color(50, 125, 62),
+                ctX+ctW, by-42, new Color(32, 95, 44));
+        g.setPaint(coneG2); g.fillPolygon(crx2, cry2, 3); g.setPaint(null);
+        g.setColor(new Color(28, 90, 38));
+        g.setStroke(new BasicStroke(1.2f)); g.drawPolygon(crx2, cry2, 3); g.setStroke(new BasicStroke(1f));
+        // flag
+        g.setColor(new Color(190, 42, 42));
+        g.setStroke(new BasicStroke(1.8f));
+        g.drawLine(ctX+ctW/2, by-42-h/4, ctX+ctW/2, by-42-h/4+24);
+        g.setStroke(new BasicStroke(1f));
+        g.fillPolygon(new int[]{ctX+ctW/2, ctX+ctW/2+16, ctX+ctW/2},
+                      new int[]{by-42-h/4, by-42-h/4+8, by-42-h/4+16}, 3);
 
-        // Crown on top center
-        g.setColor(new Color(220, 180, 30));
-        int[] crownX = {bx+bw/2-16, bx+bw/2-16, bx+bw/2-8, bx+bw/2-4,
-                         bx+bw/2, bx+bw/2+4, bx+bw/2+8, bx+bw/2+16, bx+bw/2+16};
-        int[] crownY = {by+8, by-4, by-10, by-4, by-14, by-4, by-10, by-4, by+8};
-        g.fillPolygon(crownX, crownY, 9);
-        g.setColor(new Color(200, 50, 50)); g.fillOval(bx+bw/2-4, by-12, 8, 8);
-        g.setColor(new Color(50, 100, 200)); g.fillOval(bx+bw/2-14, by-6, 6, 6);
-        g.fillOval(bx+bw/2+8, by-6, 6, 6);
+        // portcullis gate
+        g.setColor(new Color(33, 30, 48));
+        g.fillArc(bx+bw/2-24, by+bh/3, 48, 48, 0, 180);
+        g.fillRect(bx+bw/2-24, by+bh/3+24, 48, bh*2/3-24);
+        // portcullis bars
+        g.setColor(new Color(78, 72, 95));
+        g.setStroke(new BasicStroke(2.8f));
+        for (int bar = 0; bar < 4; bar++)
+            g.drawLine(bx+bw/2-19+bar*12, by+bh/3+5, bx+bw/2-19+bar*12, by+bh-2);
+        g.drawLine(bx+bw/2-22, by+bh/3+24, bx+bw/2+22, by+bh/3+24);
+        g.drawLine(bx+bw/2-22, by+bh/3+38, bx+bw/2+22, by+bh/3+38);
+        g.setStroke(new BasicStroke(1f));
 
-        g.setColor(new Color(150, 120, 60));
+        drawWindow(g, bx+32, by+14, 30, 24, glass);
+        drawWindow(g, bx+bw-62, by+14, 30, 24, glass);
+
+        // moat
+        GradientPaint moat = new GradientPaint(bx, by+bh, new Color(80, 128, 200, 185),
+                bx, by+bh+12, new Color(50, 100, 180, 105));
+        g.setPaint(moat); g.fillRect(bx, by+bh, bw, 12); g.setPaint(null);
+        // moat ripple
+        g.setColor(new Color(120, 175, 230, 80));
+        g.setStroke(new BasicStroke(1f));
+        g.drawArc(bx+10, by+bh+2, bw/3, 8, 0, 180);
+        g.drawArc(bx+bw/2, by+bh+3, bw/3, 6, 0, 180);
+        g.setStroke(new BasicStroke(1f));
+
+        // wall outline
+        g.setColor(new Color(80, 78, 100));
         g.setStroke(new BasicStroke(2f));
         g.drawRect(bx, by, bw, bh);
         g.setStroke(new BasicStroke(1f));
 
-        drawStarBadge(g, x + w - 18, y + 4, 7);
+        drawStarBadge(g, x+w-2, y+6, 6);
     }
 
-    // ── STAGE 20: Legend Mansion ──
-    private static void drawLegendMansion(Graphics2D g, int x, int y, int w, int h) {
-        // Golden glowing mansion
-        int bx = x + 1, by = y + h/10, bw = w - 2, bh = h*9/10;
+    // ── 6: ROYAL PALACE (stages 18-19) ───────────────────────────────────────
+    private static void drawRoyalPalace(Graphics2D g, int x, int y, int w, int h) {
+        int bx = x+2, by = y+h/8, bw = w-4, bh = h*7/8;
+        Color glass = new Color(255, 248, 185, 215);
 
-        // Glow aura
-        g.setColor(new Color(255, 215, 0, 30));
-        g.fillOval(bx - 10, by - 10, bw + 20, bh + 20);
-        g.setColor(new Color(255, 215, 0, 18));
-        g.fillOval(bx - 20, by - 20, bw + 40, bh + 40);
+        g.setColor(new Color(0,0,0,58));
+        g.fillOval(bx-2, by+bh-2, bw+4, 18);
 
-        g.setColor(new Color(0, 0, 0, 55));
-        g.fillOval(bx, by + bh - 4, bw, 18);
+        // marble walls
+        GradientPaint marble = new GradientPaint(bx, by, new Color(250, 246, 232),
+                bx+bw, by+bh, new Color(215, 210, 194));
+        g.setPaint(marble); g.fillRect(bx, by, bw, bh); g.setPaint(null);
+        // marble veins
+        g.setColor(new Color(195, 188, 168, 60));
+        g.setStroke(new BasicStroke(0.9f));
+        for (int v = 0; v < 7; v++)
+            g.drawLine(bx+v*(bw/7), by, bx+v*(bw/7)+14, by+bh);
+        g.setStroke(new BasicStroke(1f));
 
-        // Golden walls
-        GradientPaint gold = new GradientPaint(bx, by, new Color(255, 235, 150), bx+bw, by+bh, new Color(200, 160, 60));
-        g.setPaint(gold); g.fillRect(bx, by, bw, bh); g.setPaint(null);
+        // gold trim bands
+        Color gold = new Color(220, 180, 40);
+        g.setColor(gold);
+        g.fillRect(bx, by, bw, 9);
+        g.fillRect(bx, by+bh-14, bw, 14);
+        g.fillRect(bx, by+bh/3-3, bw, 6);
+        g.setColor(new Color(255, 215, 65, 85));
+        g.fillRect(bx+1, by+1, bw-2, 5);
+        g.fillRect(bx+1, by+bh/3-2, bw-2, 3);
 
-        // Diamond pattern on walls
-        g.setColor(new Color(220, 180, 50, 80));
-        for (int drow = 0; drow < 6; drow++) {
-            for (int dcol = 0; dcol < bw/20; dcol++) {
-                int dx = bx + dcol * 20 + (drow % 2) * 10;
-                int dy = by + drow * (bh/6);
-                g.drawLine(dx, dy + bh/12, dx + 10, dy);
-                g.drawLine(dx + 10, dy, dx + 20, dy + bh/12);
-                g.drawLine(dx + 20, dy + bh/12, dx + 10, dy + bh/6);
-                g.drawLine(dx + 10, dy + bh/6, dx, dy + bh/12);
-            }
-        }
-
-        // Seven golden spires
-        for (int sp = 0; sp < 7; sp++) {
-            int sw = 18;
-            int sx = bx + sp * (bw / 6) - sw/2;
-            if (sx < bx) sx = bx;
-            if (sx + sw > bx + bw) sx = bx + bw - sw;
-            int sh = (sp == 3) ? bh : bh * 4 / 5;
-            GradientPaint spW = new GradientPaint(sx, by+bh-sh, new Color(255,240,170), sx+sw, by+bh, new Color(200,160,55));
-            g.setPaint(spW); g.fillRect(sx, by+bh-sh, sw, sh); g.setPaint(null);
-            // Gold cone
-            int[] srx = {sx-5, sx+sw/2, sx+sw+5};
+        // five spire towers
+        int[] spireXs = {bx, bx+bw/4, bx+bw/2-14, bx+bw*3/4-14, bx+bw-25};
+        int[] spireHs = {bh*2/3, bh*3/5, bh*4/5, bh*3/5, bh*2/3};
+        Color[] spireRoofs = {new Color(60,112,185), new Color(80,162,80),
+                               new Color(182,50,50), new Color(80,162,80), new Color(60,112,185)};
+        for (int sp = 0; sp < 5; sp++) {
+            int sw = 25, sh = spireHs[sp];
+            int sx = spireXs[sp];
+            GradientPaint sW = new GradientPaint(sx, by+bh-sh, new Color(238, 232, 218),
+                    sx+sw, by+bh, new Color(200, 194, 180));
+            g.setPaint(sW); g.fillRect(sx, by+bh-sh, sw, sh); g.setPaint(null);
+            // cone
+            int[] srx = {sx-6, sx+sw/2, sx+sw+6};
             int[] sry = {by+bh-sh, by+bh-sh-h/4, by+bh-sh};
-            GradientPaint cone = new GradientPaint(sx, by+bh-sh-h/4, new Color(255,215,0),
-                    sx+sw, by+bh-sh, new Color(180,130,10));
-            g.setPaint(cone); g.fillPolygon(srx, sry, 3); g.setPaint(null);
-            // Star on tip
-            g.setColor(new Color(255, 255, 100));
-            g.fillOval(sx+sw/2-4, by+bh-sh-h/4-5, 8, 8);
-            // Spire border
-            g.setColor(new Color(180, 130, 20));
+            GradientPaint coneG = new GradientPaint(sx, by+bh-sh-h/4,
+                    lighter(spireRoofs[sp], 40), sx+sw, by+bh-sh, darker(spireRoofs[sp], 20));
+            g.setPaint(coneG); g.fillPolygon(srx, sry, 3); g.setPaint(null);
+            // gold finial ball
+            g.setColor(new Color(255, 215, 0));
+            g.fillOval(sx+sw/2-5, by+bh-sh-h/4-7, 10, 10);
+            g.setColor(new Color(255, 245, 120));
+            g.fillOval(sx+sw/2-3, by+bh-sh-h/4-5, 4, 4);
+            // spire window
+            drawWindow(g, sx+6, by+bh-sh+8, 14, 12, glass);
+            // outline
+            g.setColor(new Color(100, 88, 65));
             g.setStroke(new BasicStroke(1.5f));
             g.drawRect(sx, by+bh-sh, sw, sh);
             g.drawPolygon(srx, sry, 3);
             g.setStroke(new BasicStroke(1f));
         }
 
-        // Grand double door with arch
-        g.setColor(new Color(150, 100, 20));
-        g.fillArc(bx+bw/2-24, by+bh/3-10, 48, 48, 0, 180);
-        g.setColor(new Color(120, 80, 15));
-        g.fillRect(bx+bw/2-24, by+bh/3+14, 24, bh*2/3-14);
-        g.fillRect(bx+bw/2, by+bh/3+14, 24, bh*2/3-14);
-        // Gold door trim
-        g.setColor(new Color(255, 215, 0));
-        g.setStroke(new BasicStroke(2f));
-        g.drawArc(bx+bw/2-24, by+bh/3-10, 48, 48, 0, 180);
-        g.drawLine(bx+bw/2, by+bh/3+14, bx+bw/2, by+bh);
+        // grand arched entrance
+        g.setColor(new Color(182, 146, 60));
+        g.fillRect(bx+bw/2-26, by+bh/2-12, 52, 8);
+        g.setColor(new Color(110, 74, 24));
+        g.fillArc(bx+bw/2-26, by+bh/3, 52, 52, 0, 180);
+        g.fillRect(bx+bw/2-26, by+bh/3+26, 26, bh*2/3-26);
+        g.fillRect(bx+bw/2, by+bh/3+26, 26, bh*2/3-26);
+        // arch gold moulding
+        g.setColor(new Color(222, 182, 40));
+        g.setStroke(new BasicStroke(3f));
+        g.drawArc(bx+bw/2-26, by+bh/3, 52, 52, 0, 180);
         g.setStroke(new BasicStroke(1f));
-        g.fillOval(bx+bw/2-6, by+bh*2/3, 8, 8);
-        g.fillOval(bx+bw/2+2, by+bh*2/3, 8, 8);
+        g.drawLine(bx+bw/2, by+bh/3+26, bx+bw/2, by+bh);
+        // door knobs
+        g.setColor(new Color(255, 215, 0));
+        g.fillOval(bx+bw/2-7, by+bh*2/3, 8, 8);
+        g.fillOval(bx+bw/2+3, by+bh*2/3, 8, 8);
 
-        // Gem encrusted columns
-        Color[] gemColors = {new Color(200,50,50), new Color(50,100,255), new Color(50,200,50)};
-        for (int col = 0; col < 3; col++) {
-            int colX = bx+bw/2-42+col*30;
-            g.setColor(new Color(255,240,180));
-            g.fillRect(colX, by+bh/3+10, 8, bh*2/3-10);
-            g.setColor(new Color(220,180,40));
-            g.fillOval(colX-3, by+bh/3+8, 14, 7);
-            g.fillOval(colX-3, by+bh-8, 14, 7);
-            // Gems on column
-            g.setColor(gemColors[col]);
-            g.fillOval(colX+1, by+bh/2, 6, 6);
+        // columns (4)
+        for (int col = 0; col < 4; col++) {
+            int colX = bx+bw/2-52+col*33;
+            g.setColor(new Color(244, 240, 225));
+            g.fillRect(colX, by+bh/3+22, 10, bh*2/3-22);
+            g.setColor(new Color(222, 182, 40));
+            g.fillRoundRect(colX-5, by+bh/3+20, 20, 7, 4, 4);
+            g.fillRoundRect(colX-5, by+bh-12, 20, 8, 4, 4);
+            // fluting
+            g.setColor(new Color(200, 195, 175, 85));
+            g.fillRect(colX+3, by+bh/3+28, 4, bh*2/3-36);
         }
 
-        // Ornate windows
-        drawCartoonWindow(g, bx+22, by+10, 32, 26);
-        drawCartoonWindow(g, bx+bw-54, by+10, 32, 26);
-        drawCartoonWindow(g, bx+58, by+10, 26, 22);
-        drawCartoonWindow(g, bx+bw-84, by+10, 26, 22);
+        // ornate windows
+        drawWindow(g, bx+28, by+13, 34, 28, glass);
+        drawWindow(g, bx+bw-62, by+13, 34, 28, glass);
+        drawWindow(g, bx+68, by+14, 28, 24, glass);
+        drawWindow(g, bx+bw-96, by+14, 28, 24, glass);
 
-        // Rainbow sparkles
-        Color[] sparkColors = {new Color(255,80,80), new Color(255,180,50),
-                new Color(100,255,80), new Color(80,160,255), new Color(200,80,255)};
-        int[][] sparkPos = {{bx+15,by+60},{bx+bw-20,by+50},{bx+bw/4,by+bh/3},
-                           {bx+bw*3/4,by+bh/3},{bx+bw/2,by+20}};
-        for (int sp = 0; sp < 5; sp++) {
-            g.setColor(sparkColors[sp]);
-            int spx = sparkPos[sp][0], spy = sparkPos[sp][1];
-            g.drawLine(spx-5, spy, spx+5, spy);
-            g.drawLine(spx, spy-5, spx, spy+5);
-            g.drawLine(spx-3, spy-3, spx+3, spy+3);
-            g.drawLine(spx+3, spy-3, spx-3, spy+3);
-        }
+        // crown on rooftop
+        g.setColor(new Color(222, 182, 32));
+        int[] crownX = {bx+bw/2-18, bx+bw/2-18, bx+bw/2-9, bx+bw/2-5,
+                         bx+bw/2,    bx+bw/2+5, bx+bw/2+9, bx+bw/2+18, bx+bw/2+18};
+        int[] crownY = {by+9, by-5, by-14, by-5, by-18, by-5, by-14, by-5, by+9};
+        g.fillPolygon(crownX, crownY, 9);
+        g.setColor(new Color(188, 148, 18));
+        g.setStroke(new BasicStroke(1.2f)); g.drawPolygon(crownX, crownY, 9); g.setStroke(new BasicStroke(1f));
+        g.setColor(new Color(200, 50, 50));  g.fillOval(bx+bw/2-4, by-16, 9, 9);
+        g.setColor(new Color(50, 100, 205)); g.fillOval(bx+bw/2-15, by-9, 8, 8);
+        g.setColor(new Color(50, 100, 205)); g.fillOval(bx+bw/2+9, by-9, 8, 8);
 
-        // Gold outline
-        g.setColor(new Color(180, 130, 10));
-        g.setStroke(new BasicStroke(2.5f));
+        g.setColor(new Color(150, 120, 60));
+        g.setStroke(new BasicStroke(2.2f));
         g.drawRect(bx, by, bw, bh);
         g.setStroke(new BasicStroke(1f));
 
-        // LEGEND text banner
-        g.setPaint(new GradientPaint(bx+bw/2-35, by+bh-22, new Color(200,160,10),
-                bx+bw/2+35, by+bh-8, new Color(255,215,0)));
-        g.fillRoundRect(bx+bw/2-35, by+bh-22, 70, 18, 6, 6); g.setPaint(null);
-        g.setFont(new Font("SansSerif", Font.BOLD, 9));
-        g.setColor(new Color(60, 30, 0));
+        drawStarBadge(g, x+w-2, y+6, 7);
+    }
+
+    // ── 7: LEGEND MANSION (stage 20) ──────────────────────────────────────────
+    private static void drawLegendMansion(Graphics2D g, int x, int y, int w, int h) {
+        int bx = x+1, by = y+h/10, bw = w-2, bh = h*9/10;
+        Color glass = new Color(255, 252, 205, 228);
+
+        // pulsing golden aura
+        for (int layer = 4; layer >= 1; layer--) {
+            int pad = layer*8;
+            g.setColor(new Color(255, 215, 0, 16*(5-layer)));
+            g.fillRoundRect(bx-pad, by-pad, bw+pad*2, bh+pad*2, 14, 14);
+        }
+
+        g.setColor(new Color(0,0,0,58));
+        g.fillOval(bx-2, by+bh-2, bw+4, 20);
+
+        // gold + ivory walls
+        GradientPaint goldWall = new GradientPaint(bx, by, new Color(255, 245, 178),
+                bx+bw, by+bh, new Color(208, 170, 65));
+        g.setPaint(goldWall); g.fillRect(bx, by, bw, bh); g.setPaint(null);
+
+        // diamond lattice
+        g.setColor(new Color(222, 182, 50, 72));
+        g.setStroke(new BasicStroke(0.8f));
+        for (int drow = 0; drow < 8; drow++) {
+            for (int dcol = 0; dcol < bw/22; dcol++) {
+                int dx = bx+dcol*22+(drow%2)*11;
+                int dy = by+drow*(bh/8);
+                g.drawLine(dx, dy+bh/16, dx+11, dy);
+                g.drawLine(dx+11, dy, dx+22, dy+bh/16);
+                g.drawLine(dx+22, dy+bh/16, dx+11, dy+bh/8);
+                g.drawLine(dx+11, dy+bh/8, dx, dy+bh/16);
+            }
+        }
+        g.setStroke(new BasicStroke(1f));
+
+        // gold trim bands
+        g.setColor(new Color(222, 182, 32));
+        g.fillRect(bx, by, bw, 9);
+        g.fillRect(bx, by+bh-14, bw, 14);
+        g.fillRect(bx, by+bh/3, bw, 7);
+        g.setColor(new Color(255, 228, 65, 105));
+        g.fillRect(bx+1, by+1, bw-2, 5);
+        g.fillRect(bx+1, by+bh/3+1, bw-2, 3);
+
+        // seven golden spires
+        for (int sp = 0; sp < 7; sp++) {
+            int sw = 22;
+            int sx = bx + sp*(bw/6) - sw/2;
+            sx = Math.max(bx, Math.min(bx+bw-sw, sx));
+            int sh = (sp==3) ? bh : bh*4/5;
+            GradientPaint spW = new GradientPaint(sx, by+bh-sh, new Color(255, 248, 192),
+                    sx+sw, by+bh, new Color(205, 165, 55));
+            g.setPaint(spW); g.fillRect(sx, by+bh-sh, sw, sh); g.setPaint(null);
+            // cone
+            int[] srx = {sx-7, sx+sw/2, sx+sw+7};
+            int[] sry = {by+bh-sh, by+bh-sh-h/4, by+bh-sh};
+            GradientPaint coneG = new GradientPaint(sx, by+bh-sh-h/4,
+                    new Color(255, 225, 0), sx+sw, by+bh-sh, new Color(182, 132, 8));
+            g.setPaint(coneG); g.fillPolygon(srx, sry, 3); g.setPaint(null);
+            // star tip
+            g.setColor(new Color(255, 255, 125));
+            drawStar(g, sx+sw/2, by+bh-sh-h/4-2, 7);
+            g.setColor(new Color(182, 132, 12));
+            g.setStroke(new BasicStroke(1.8f));
+            g.drawRect(sx, by+bh-sh, sw, sh);
+            g.drawPolygon(srx, sry, 3);
+            g.setStroke(new BasicStroke(1f));
+            // spire window
+            drawWindow(g, sx+5, by+bh-sh+9, 14, 11, glass);
+        }
+
+        // grand arched double door
+        g.setColor(new Color(152, 105, 20));
+        g.fillArc(bx+bw/2-28, by+bh/3-14, 56, 56, 0, 180);
+        g.setColor(new Color(120, 80, 14));
+        g.fillRect(bx+bw/2-28, by+bh/3+14, 28, bh*2/3-14);
+        g.fillRect(bx+bw/2, by+bh/3+14, 28, bh*2/3-14);
+        // door gold arch
+        g.setColor(new Color(255, 215, 0));
+        g.setStroke(new BasicStroke(3f));
+        g.drawArc(bx+bw/2-28, by+bh/3-14, 56, 56, 0, 180);
+        g.drawLine(bx+bw/2, by+bh/3+14, bx+bw/2, by+bh);
+        g.setStroke(new BasicStroke(1f));
+        // door knobs
+        g.fillOval(bx+bw/2-9, by+bh*2/3, 10, 10);
+        g.fillOval(bx+bw/2+4, by+bh*2/3, 10, 10);
+
+        // gem-encrusted columns (3)
+        Color[] gemColors = {new Color(205, 50, 50), new Color(50, 100, 255), new Color(50, 200, 50)};
+        for (int col = 0; col < 3; col++) {
+            int colX = bx+bw/2-48+col*36;
+            g.setColor(new Color(255, 248, 205));
+            g.fillRect(colX, by+bh/3+12, 12, bh*2/3-12);
+            g.setColor(new Color(222, 182, 40));
+            g.fillRoundRect(colX-5, by+bh/3+10, 22, 8, 4, 4);
+            g.fillRoundRect(colX-5, by+bh-12, 22, 9, 4, 4);
+            // gems at mid-column
+            g.setColor(gemColors[col]);
+            g.fillOval(colX+2, by+bh/2, 9, 9);
+            g.setColor(new Color(255, 255, 255, 155));
+            g.fillOval(colX+3, by+bh/2+1, 3, 3);
+        }
+
+        // ornate windows
+        drawWindow(g, bx+24, by+13, 35, 28, glass);
+        drawWindow(g, bx+bw-59, by+13, 35, 28, glass);
+        drawWindow(g, bx+65, by+14, 29, 24, glass);
+        drawWindow(g, bx+bw-94, by+14, 29, 24, glass);
+
+        // rainbow sparkles
+        Color[] spkC = {new Color(255,80,80), new Color(255,185,52),
+                         new Color(102,255,82), new Color(82,162,255), new Color(205,82,255)};
+        int[][] spkPos = {{bx+16,by+52},{bx+bw-22,by+45},{bx+bw/4,by+bh/3},
+                          {bx+bw*3/4,by+bh/3},{bx+bw/2,by+24}};
+        for (int sp = 0; sp < 5; sp++) {
+            g.setColor(spkC[sp]);
+            g.setStroke(new BasicStroke(1.8f));
+            int spx = spkPos[sp][0], spy = spkPos[sp][1];
+            g.drawLine(spx-7,spy,spx+7,spy); g.drawLine(spx,spy-7,spx,spy+7);
+            g.drawLine(spx-5,spy-5,spx+5,spy+5); g.drawLine(spx+5,spy-5,spx-5,spy+5);
+            g.setStroke(new BasicStroke(1f));
+        }
+
+        // gold outline
+        g.setColor(new Color(178, 130, 8));
+        g.setStroke(new BasicStroke(2.8f));
+        g.drawRect(bx, by, bw, bh);
+        g.setStroke(new BasicStroke(1f));
+
+        // LEGEND banner
+        GradientPaint banner = new GradientPaint(bx+bw/2-40, by+bh-24,
+                new Color(202, 162, 10), bx+bw/2+40, by+bh-8, new Color(255, 218, 0));
+        g.setPaint(banner); g.fillRoundRect(bx+bw/2-40, by+bh-24, 80, 20, 8, 8); g.setPaint(null);
+        g.setColor(new Color(100, 70, 0));
+        g.setFont(new Font("SansSerif", Font.BOLD, 10));
         FontMetrics fm = g.getFontMetrics();
-        g.drawString("LEGEND", bx+bw/2-fm.stringWidth("LEGEND")/2, by+bh-8);
+        String legend = "\u2605 LEGEND \u2605";
+        g.drawString(legend, bx+bw/2-fm.stringWidth(legend)/2, by+bh-8);
 
-        drawStarBadge(g, x + w - 18, y + 4, 8);
+        drawStarBadge(g, x+w-2, y+6, 8);
     }
 
-    // ── Shared helpers ──
+    // ── utilities ─────────────────────────────────────────────────────────────
 
-    private static void drawCartoonWindow(Graphics2D g, int x, int y, int w, int h) {
-        // Frame
-        g.setColor(new Color(140, 100, 50));
-        g.fillRoundRect(x - 3, y - 3, w + 6, h + 6, 5, 5);
-        // Glass
-        GradientPaint glass = new GradientPaint(x, y, new Color(200, 230, 255, 200),
-                x + w, y + h, new Color(150, 200, 255, 180));
-        g.setPaint(glass); g.fillRoundRect(x, y, w, h, 3, 3); g.setPaint(null);
-        // Cross panes
-        g.setColor(new Color(100, 80, 50, 160));
-        g.drawLine(x + w/2, y, x + w/2, y + h);
-        g.drawLine(x, y + h/2, x + w, y + h/2);
-        // Shine
-        g.setColor(new Color(255, 255, 255, 120));
-        g.fillOval(x + 2, y + 2, w/3, h/3);
+    private static void drawStar(Graphics2D g, int cx, int cy, int r) {
+        int[] sx = new int[10], sy = new int[10];
+        for (int i = 0; i < 10; i++) {
+            double a = Math.PI/5*i - Math.PI/2;
+            int rad = (i%2==0) ? r : r/2;
+            sx[i] = cx+(int)(Math.cos(a)*rad);
+            sy[i] = cy+(int)(Math.sin(a)*rad);
+        }
+        g.fillPolygon(sx, sy, 10);
     }
 
-    private static void drawStarBadge(Graphics2D g, int x, int y, int count) {
-        // Small gold star badge showing stage tier
-        g.setColor(new Color(255, 215, 0, 200));
-        g.setFont(new Font("SansSerif", Font.BOLD, 9));
-        StringBuilder stars = new StringBuilder();
-        for (int i = 0; i < Math.min(count, 5); i++) stars.append("\u2605");
-        g.drawString(stars.toString(), x - stars.length() * 5, y + 10);
+    private static Color lighter(Color c, int amt) {
+        return new Color(Math.min(255, c.getRed()+amt),
+                         Math.min(255, c.getGreen()+amt),
+                         Math.min(255, c.getBlue()+amt), c.getAlpha());
+    }
+    private static Color darker(Color c, int amt) {
+        return new Color(Math.max(0, c.getRed()-amt),
+                         Math.max(0, c.getGreen()-amt),
+                         Math.max(0, c.getBlue()-amt), c.getAlpha());
     }
 
     private FarmHouseRenderer() {}

@@ -532,24 +532,8 @@ public class GameScreen extends Screen {
         }
     }
 
-    private int getSidebarIconButtonY() {
-        int py = 62; // header banner height
-
-        py += 48 + 5;  // DIFFICULTY card
-        py += 48 + 5;  // LEVEL card
-        py += 48 + 5;  // SCORE card
-        py += 52 + 5;  // TARGET card
-        py += 50 + 5;  // LIVES card
-        py += 56 + 5;  // TIMER card
-        py += 48 + 5;  // COINS card
-        if (state.getCombo() > 0) py += 50 + 5; // COMBO card
-
-        py += 12;      // divider
-        py += 38;      // progress section
-        py += 40;      // power-ups section
-        py += 72;      // farm badge
-
-        return py;
+      private int getSidebarIconButtonY() {
+        return GamePanel.H - 44 + 2;
     }
 
     public void setPlayerName(String n)    { playerName=n; }
