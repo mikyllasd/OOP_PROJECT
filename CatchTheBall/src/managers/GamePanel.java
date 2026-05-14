@@ -11,10 +11,10 @@ import java.awt.*;
 
 public class GamePanel extends JPanel implements Runnable {
 
-    public static final int W         = 900;
-    public static final int H         = 650;
-    public static final int ARENA_W   = 650;
-    public static final int SIDEBAR_W = 250;
+    public static final int W          = 900;
+    public static final int H          = 650;
+    public static final int ARENA_W    = 650;
+    public static final int SIDEBAR_W  = 250;
     public static final int TARGET_FPS = 60;
 
     private Thread           gameThread;
@@ -29,13 +29,12 @@ public class GamePanel extends JPanel implements Runnable {
     private AchievementManager achievementManager;
     private AccountManager     accountManager;
 
-    private float          fadeAlpha    = 1f;
-    private boolean        fadingIn     = true;
+    private float          fadeAlpha     = 1f;
+    private boolean        fadingIn      = true;
     private GameScreenType pendingSwitch = null;
 
-    // Scale fields
-    private float scaleX  = 1f;
-    private float scaleY  = 1f;
+    private float scaleX = 1f;
+    private float scaleY = 1f;
 
     public GamePanel() {
         setBackground(Color.BLACK);
@@ -112,7 +111,6 @@ public class GamePanel extends JPanel implements Runnable {
         super.paintComponent(g0);
         Graphics2D g = (Graphics2D) g0;
 
-        // Stretch to fill entire screen
         scaleX = (float) getWidth()  / W;
         scaleY = (float) getHeight() / H;
 
@@ -131,7 +129,6 @@ public class GamePanel extends JPanel implements Runnable {
         }
     }
 
-    // Translate real screen mouse coords back to game coords
     public int translateX(int screenX) { return (int)(screenX / scaleX); }
     public int translateY(int screenY) { return (int)(screenY / scaleY); }
 

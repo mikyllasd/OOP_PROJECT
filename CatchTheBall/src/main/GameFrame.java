@@ -8,6 +8,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
 public class GameFrame extends JFrame {
+
     private GamePanel gamePanel;
 
     public GameFrame() {
