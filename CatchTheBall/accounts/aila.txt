@@ -1,4 +1,4 @@
-coins=220
+coins=384
 farmerName=sofia
 equippedSkin=FARMER_MALE
 equippedBasket=WOVEN
@@ -7,7 +7,7 @@ bestScore=3374
 bestCombo=15
 farmStage=3
 tutorialShown=true
-totalCoinsEarned=1120
+totalCoinsEarned=1284
 totalCoinsSpent=900
 totalBallsCaught=140
 lastLogin=2026-05-14
