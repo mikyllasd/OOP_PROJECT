@@ -95,23 +95,23 @@ public class RenderUtils {
     }
 
     public static void drawExitButton(Graphics2D g, Rectangle r, boolean hovered) {
-    Color bg     = hovered ? new Color(200,50,50) : new Color(150,35,35);
-    Color border = hovered ? new Color(255,100,100) : new Color(200,70,70);
-    GradientPaint gp = new GradientPaint(r.x,r.y,bg.brighter(),r.x,r.y+r.height,bg.darker());
-    g.setPaint(gp);
-    g.fillRoundRect(r.x,r.y,r.width,r.height,10,10);
-    g.setPaint(null);
-    g.setColor(border);
-    g.setStroke(new BasicStroke(hovered?2f:1.5f));
-    g.drawRoundRect(r.x,r.y,r.width,r.height,10,10);
-    g.setStroke(new BasicStroke(1f));
-    g.setFont(FontManager.getBold(13));
-    g.setColor(Color.WHITE);
-    FontMetrics fm=g.getFontMetrics();
-    String label="Exit Game";
-    g.drawString(label,r.x+(r.width-fm.stringWidth(label))/2,
-            r.y+r.height/2+fm.getAscent()/2-2);
-}
+        Color bg     = hovered ? new Color(200,50,50) : new Color(150,35,35);
+        Color border = hovered ? new Color(255,100,100) : new Color(200,70,70);
+        GradientPaint gp = new GradientPaint(r.x,r.y,bg.brighter(),r.x,r.y+r.height,bg.darker());
+        g.setPaint(gp);
+        g.fillRoundRect(r.x,r.y,r.width,r.height,10,10);
+        g.setPaint(null);
+        g.setColor(border);
+        g.setStroke(new BasicStroke(hovered?2f:1.5f));
+        g.drawRoundRect(r.x,r.y,r.width,r.height,10,10);
+        g.setStroke(new BasicStroke(1f));
+        g.setFont(FontManager.getBold(13));
+        g.setColor(Color.WHITE);
+        FontMetrics fm = g.getFontMetrics();
+        String label = "Exit Game";
+        g.drawString(label, r.x+(r.width-fm.stringWidth(label))/2,
+                r.y+r.height/2+fm.getAscent()/2-2);
+    }
 
     private RenderUtils() {}
 }

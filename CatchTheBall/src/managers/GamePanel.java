@@ -5,6 +5,7 @@ import OOP_PROJECT.CatchTheBall.src.audio.MusicManager;
 import OOP_PROJECT.CatchTheBall.src.audio.SoundManager;
 import OOP_PROJECT.CatchTheBall.src.enums.GameScreenType;
 import OOP_PROJECT.CatchTheBall.src.screens.ScreenManager;
+import OOP_PROJECT.CatchTheBall.src.core.Screen;
 
 import javax.swing.*;
 import java.awt.*;
@@ -44,6 +45,10 @@ public class GamePanel extends JPanel implements Runnable {
         soundManager       = new SoundManager();
         musicManager       = new MusicManager();
         playerData         = new PlayerData();
+        soundManager.setVolume(playerData.getSfxVolume());
+        soundManager.setMuted(playerData.isSfxMuted());
+        musicManager.setVolume(playerData.getMusicVolume());
+        musicManager.setMuted(playerData.isMusicMuted());
         scoreManager       = new ScoreManager();
         achievementManager = new AchievementManager();
         screenManager      = new ScreenManager(this);
@@ -52,6 +57,10 @@ public class GamePanel extends JPanel implements Runnable {
         addKeyListener(inputManager);
         addMouseMotionListener(inputManager);
         addMouseListener(inputManager);
+        addMouseWheelListener(e -> {
+            Screen current = screenManager.getCurrentScreen();
+            if (current != null) current.onMouseWheelMoved(e);
+        });
 
         screenManager.switchTo(GameScreenType.ACCOUNT_SELECT);
     }

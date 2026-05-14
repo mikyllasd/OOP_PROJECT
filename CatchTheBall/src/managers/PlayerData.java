@@ -1,6 +1,7 @@
 package OOP_PROJECT.CatchTheBall.src.managers;
 
 import OOP_PROJECT.CatchTheBall.src.enums.BasketSkin;
+import OOP_PROJECT.CatchTheBall.src.enums.Difficulty;
 import OOP_PROJECT.CatchTheBall.src.enums.SkinType;
 import OOP_PROJECT.CatchTheBall.src.interfaces.Saveable;
 import OOP_PROJECT.CatchTheBall.src.models.PlayerProfile;
@@ -15,6 +16,11 @@ public class PlayerData implements Saveable {
     private Set<BasketSkin> ownedBaskets;
     private String        achievementData;
     private int           farmStage;
+    private float         musicVolume = 0.4f;
+    private float         sfxVolume   = 0.5f;
+    private boolean       musicMuted  = false;
+    private boolean       sfxMuted    = false;
+    private Difficulty    defaultDifficulty = Difficulty.NORMAL;
 
     public PlayerData() {
         profile         = new PlayerProfile();
@@ -67,6 +73,17 @@ public class PlayerData implements Saveable {
     public void setFarmStage(int s){ farmStage = s; profile.setFarmStage(s); save(); }
     public void upgradeFarm()      { farmStage++; profile.setFarmStage(farmStage); save(); }
 
+    public float       getMusicVolume()        { return musicVolume; }
+    public float       getSfxVolume()          { return sfxVolume; }
+    public boolean     isMusicMuted()          { return musicMuted; }
+    public boolean     isSfxMuted()            { return sfxMuted; }
+    public Difficulty  getDefaultDifficulty()  { return defaultDifficulty; }
+    public void        setMusicVolume(float v) { musicVolume = Math.max(0f, Math.min(1f, v)); save(); }
+    public void        setSfxVolume(float v)   { sfxVolume = Math.max(0f, Math.min(1f, v)); save(); }
+    public void        setMusicMuted(boolean m) { musicMuted = m; save(); }
+    public void        setSfxMuted(boolean m)   { sfxMuted = m; save(); }
+    public void        setDefaultDifficulty(Difficulty d) { defaultDifficulty = d; save(); }
+
     public String getAchievementData()         { return achievementData; }
     public void   setAchievementData(String d) { achievementData = d; save(); }
 
@@ -111,6 +128,11 @@ public class PlayerData implements Saveable {
         }
         sb.append("ownedBaskets=").append(baskets).append("\n");
         sb.append("achievements=").append(achievementData).append("\n");
+        sb.append("musicVolume=").append(musicVolume).append("\n");
+        sb.append("sfxVolume=").append(sfxVolume).append("\n");
+        sb.append("musicMuted=").append(musicMuted).append("\n");
+        sb.append("sfxMuted=").append(sfxMuted).append("\n");
+        sb.append("defaultDifficulty=").append(defaultDifficulty.name()).append("\n");
 
         try {
             FileUtils.writeLines(saveFile, sb.toString());
@@ -180,6 +202,18 @@ public class PlayerData implements Saveable {
                     catch (Exception ignored) {}
             if (kv.containsKey("achievements"))
                 achievementData = kv.get("achievements");
+            if (kv.containsKey("musicVolume"))
+                musicVolume = Float.parseFloat(kv.get("musicVolume"));
+            if (kv.containsKey("sfxVolume"))
+                sfxVolume = Float.parseFloat(kv.get("sfxVolume"));
+            if (kv.containsKey("musicMuted"))
+                musicMuted = Boolean.parseBoolean(kv.get("musicMuted"));
+            if (kv.containsKey("sfxMuted"))
+                sfxMuted = Boolean.parseBoolean(kv.get("sfxMuted"));
+            if (kv.containsKey("defaultDifficulty"))
+                try {
+                    defaultDifficulty = Difficulty.valueOf(kv.get("defaultDifficulty"));
+                } catch (Exception ignored) {}
 
         } catch (Exception e) {
             e.printStackTrace();

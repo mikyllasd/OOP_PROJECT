@@ -12,6 +12,7 @@ import OOP_PROJECT.CatchTheBall.src.models.Achievement;
 import OOP_PROJECT.CatchTheBall.src.models.FarmProgression;
 import OOP_PROJECT.CatchTheBall.src.models.GameState;
 import OOP_PROJECT.CatchTheBall.src.renderers.BackgroundRenderer;
+import OOP_PROJECT.CatchTheBall.src.renderers.MenuBackgroundRenderer;
 import OOP_PROJECT.CatchTheBall.src.renderers.SidebarRenderer;
 import OOP_PROJECT.CatchTheBall.src.utils.*;
 import java.awt.*;
@@ -141,6 +142,16 @@ public class GameScreen extends Screen {
             }
             bi.remove();
         } else if (b.isActive() && b.intersects(basket)) {
+            if (b.getType().isBad()) {
+                Rectangle catchZone = new Rectangle(
+                        (int)basket.getX() + 8,
+                        (int)basket.getY() + 6,
+                        basket.getWidth() - 16,
+                        basket.getHeight() - 12);
+                Point center = new Point((int)(b.getX() + b.getWidth() / 2f),
+                        (int)(b.getY() + b.getHeight() / 2f));
+                if (!catchZone.contains(center)) continue;
+            }
             b.setActive(false);
             handleCatch(b);
             b.triggerCatch();
@@ -185,6 +196,12 @@ public class GameScreen extends Screen {
                 particles.spawnShockwave((int)b.getX(),(int)b.getY(),new Color(80,180,255));
                 basket.triggerCatch(); character.triggerCatch();
             } else {
+                state.loseLife();
+                if (state.getLives() <= 0) {
+                    showToast("\uD83D\uDEAB Out of lives!");
+                    endGame();
+                    return;
+                }
                 state.addScore(Math.max(-state.getScore(),(int)(pts*difficulty.getPenaltyMultiplier()/-20f)));
                 screenShakeTimer=8; basket.triggerShake(); character.triggerShake(); state.resetCombo();
                 panel.getSoundManager().playBadCatch();
@@ -192,6 +209,10 @@ public class GameScreen extends Screen {
                 particles.spawnFloatingText((int)b.getX(),(int)b.getY(),""+pts,ColorPalette.TEXT_BAD_CATCH);
             }
         } else {
+            if (type == BallType.GOLDEN_APPLE) {
+                state.addLife();
+                showToast("\uD83C\uDF4E Golden Apple! +1 life");
+            }
             state.incrementBallsCaught(); state.incrementCombo();
             int c=state.getCombo(); float mult=1f;
             if      (c>=12) mult=5f;
@@ -392,27 +413,61 @@ public class GameScreen extends Screen {
     }
 
     private void drawTutorial(Graphics2D g) {
-        g.setColor(new Color(0,0,0,180)); g.fillRect(0,0,GamePanel.W,GamePanel.H);
-        int pw=520,ph=300,px=(GamePanel.W-pw)/2,py=(GamePanel.H-ph)/2;
+        g.setColor(new Color(0,0,0,180));
+        g.fillRect(0,0,GamePanel.W,GamePanel.H);
+
+        int pw=520, ph=320, px=(GamePanel.W-pw)/2, py=(GamePanel.H-ph)/2;
         RenderUtils.drawGradientPanel(g,px,py,pw,ph,
                 new Color(24,60,16,245),new Color(12,40,8,245),new Color(100,200,70),2f,20);
-        String[] titles={"Move the Basket","Good vs Bad Fruits","Power-Ups","Combos & Multipliers","Coins & Shop"};
-        String[] bodies={
-            "Move your mouse or A/D keys to move the basket and catch falling fruits!",
-            "Green fruits (Apple, Orange) = GOOD! Red fruits (Mushroom, Bomb) = BAD! Avoid bad ones!",
-            "Glowing power-ups grant shields, magnets, time bonuses, double points and more!",
-            "Catch in a row for combo multipliers: x2, x3, x4, x5 - go for LEGENDARY x5!",
-            "Earn coins every catch. Spend them in the Wardrobe for skins and baskets!"
+
+        String[] titles={
+            "Move the Basket",
+            "Good vs Bad Fruits",
+            "Power-Ups",
+            "Combos & Multipliers",
+            "Coins & Shop"
         };
-        RenderUtils.drawCenteredText(g,"Tutorial ("+(tutorialStep+1)+"/5)",
-                px+pw/2,py+35,FontManager.getBold(16),ColorPalette.TEXT_GOLD);
-        RenderUtils.drawCenteredText(g,titles[tutorialStep],
-                px+pw/2,py+80,FontManager.getBold(20),Color.WHITE);
-        RenderUtils.drawCenteredText(g,bodies[tutorialStep],
-                px+pw/2,py+130,FontManager.getBody(14),new Color(200,240,170));
-        RenderUtils.drawButton(g,new Rectangle(px+pw-140,py+ph-55,120,38),
-                tutorialStep<4?"Next \u2192":"Start! \uD83C\uDF3E",true,FontManager.getBold(13));
-        RenderUtils.drawButton(g,new Rectangle(px+20,py+ph-55,80,38),"Skip",false,FontManager.getBold(13));
+        String[] bodies={
+            "Move your mouse or A/D keys\nto move the basket and catch\nfalling fruits!",
+            "Green fruits (Apple, Orange) = GOOD!\nRed fruits (Mushroom, Bomb) = BAD!\nAvoid bad ones!",
+            "Glowing power-ups grant shields,\nmagnets, time bonuses, double\npoints and more!",
+            "Catch in a row for combo multipliers:\nx2, x3, x4, x5\nGo for LEGENDARY x5!",
+            "Earn coins every catch.\nSpend them in the Wardrobe\nfor skins and baskets!"
+        };
+
+        // Step counter
+        RenderUtils.drawCenteredText(g, "Tutorial ("+(tutorialStep+1)+"/5)",
+                px+pw/2, py+35, FontManager.getBold(14), ColorPalette.TEXT_GOLD);
+
+        // Title
+        RenderUtils.drawCenteredText(g, titles[tutorialStep],
+                px+pw/2, py+70, FontManager.getBold(20), Color.WHITE);
+
+        // Divider
+        g.setColor(new Color(100,200,70,80));
+        g.setStroke(new BasicStroke(1f));
+        g.drawLine(px+30, py+85, px+pw-30, py+85);
+
+        // Body — draw each line separately
+        String[] lines = bodies[tutorialStep].split("\n");
+        Font bodyFont = FontManager.getBody(14);
+        g.setFont(bodyFont);
+        g.setColor(new Color(200,240,170));
+        FontMetrics fm = g.getFontMetrics();
+        int lineH = fm.getHeight() + 4;
+        int totalTextH = lines.length * lineH;
+        int startY = py + 85 + (ph - 85 - 60 - totalTextH) / 2 + fm.getAscent();
+        for (int i = 0; i < lines.length; i++) {
+            int lx = px + (pw - fm.stringWidth(lines[i])) / 2;
+            g.drawString(lines[i], lx, startY + i * lineH);
+        }
+
+        // Buttons
+        RenderUtils.drawButton(g, new Rectangle(px+pw-150, py+ph-55, 130, 38),
+                tutorialStep<4 ? "Next \u2192" : "Start! \uD83C\uDF3E",
+                true, FontManager.getBold(13));
+        RenderUtils.drawButton(g, new Rectangle(px+20, py+ph-55, 80, 38),
+                "Skip", false, FontManager.getBold(13));
     }
 
     private String getPowerUpToast(PowerUpType t) {
@@ -463,10 +518,38 @@ public class GameScreen extends Screen {
             return;
         }
         int mx=e.getX(),my=e.getY();
-        if (mx>GamePanel.ARENA_W) {
-            if (new Rectangle(GamePanel.ARENA_W+15,GamePanel.H-65,60,32).contains(mx,my)) panel.getSoundManager().toggleMute();
-            if (new Rectangle(GamePanel.ARENA_W+85,GamePanel.H-65,60,32).contains(mx,my)) panel.getScreenManager().switchTo(GameScreenType.PAUSED);
+        if (mx > GamePanel.ARENA_W) {
+            int buttonY = getSidebarIconButtonY();
+            int bw = (GamePanel.SIDEBAR_W - 24) / 2;
+
+            // SOUND button
+            if (new Rectangle(GamePanel.ARENA_W + 8, buttonY, bw, 32).contains(mx, my))
+                panel.getSoundManager().toggleMute();
+
+            // PAUSE button
+            if (new Rectangle(GamePanel.ARENA_W + 12 + bw, buttonY, bw, 32).contains(mx, my))
+                panel.getScreenManager().switchTo(GameScreenType.PAUSED);
         }
+    }
+
+    private int getSidebarIconButtonY() {
+        int py = 62; // header banner height
+
+        py += 48 + 5;  // DIFFICULTY card
+        py += 48 + 5;  // LEVEL card
+        py += 48 + 5;  // SCORE card
+        py += 52 + 5;  // TARGET card
+        py += 50 + 5;  // LIVES card
+        py += 56 + 5;  // TIMER card
+        py += 48 + 5;  // COINS card
+        if (state.getCombo() > 0) py += 50 + 5; // COMBO card
+
+        py += 12;      // divider
+        py += 38;      // progress section
+        py += 40;      // power-ups section
+        py += 72;      // farm badge
+
+        return py;
     }
 
     public void setPlayerName(String n)    { playerName=n; }

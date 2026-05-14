@@ -41,8 +41,11 @@ public class ScreenManager {
         if (currentScreen != null) currentScreen.onEnter();
     }
 
-    public void update()           { if (currentScreen != null) currentScreen.update(); }
-    public void draw(Graphics2D g) { if (currentScreen != null) currentScreen.draw(g); }
+    public void update() { if (currentScreen != null) currentScreen.update(); }
+
+    public void draw(Graphics2D g) {
+        if (currentScreen != null) currentScreen.draw(g);
+    }
 
     public Screen         getCurrentScreen() { return currentScreen; }
     public GameScreenType getCurrentType()   { return currentType; }

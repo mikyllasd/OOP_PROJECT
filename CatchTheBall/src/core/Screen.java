@@ -7,6 +7,7 @@ import OOP_PROJECT.CatchTheBall.src.managers.GamePanel;
 import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
 
 public abstract class Screen implements Drawable, Updatable {
     protected GamePanel panel;
@@ -30,6 +31,7 @@ public abstract class Screen implements Drawable, Updatable {
     public void onMouseClicked(MouseEvent e)  {}
     public void onMousePressed(MouseEvent e)  {}
     public void onMouseReleased(MouseEvent e) {}
+    public void onMouseWheelMoved(MouseWheelEvent e) {}
 
     protected int getTickCount() { return tickCount; }
 }

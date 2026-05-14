@@ -29,7 +29,8 @@ public class ScoreManager implements Saveable {
 
     public void addScore(String name, int score, int level, String difficulty) {
         load();
-        entries.removeIf(e -> e.getName().equalsIgnoreCase(name));
+        entries.removeIf(e -> e.getName().equalsIgnoreCase(name)
+                && e.getDifficulty().equalsIgnoreCase(difficulty));
         entries.add(new ScoreEntry(name, score, level, difficulty,
                 LocalDate.now().toString()));
         Collections.sort(entries);
@@ -37,6 +38,15 @@ public class ScoreManager implements Saveable {
             entries = new ArrayList<>(entries.subList(0, LIMIT));
         save();
         System.out.println("Score saved: " + name + " - " + score);
+    }
+
+    public List<ScoreEntry> getTopByDifficulty(String difficulty) {
+        if (difficulty == null || difficulty.isEmpty()) return getAll();
+        List<ScoreEntry> filtered = new ArrayList<>();
+        for (ScoreEntry e : entries) {
+            if (difficulty.equalsIgnoreCase(e.getDifficulty())) filtered.add(e);
+        }
+        return filtered;
     }
 
     public List<ScoreEntry> getTop10() {
