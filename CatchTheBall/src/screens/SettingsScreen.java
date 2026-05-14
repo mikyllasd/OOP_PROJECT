@@ -57,10 +57,10 @@ public class SettingsScreen extends Screen {
         int panelX = GamePanel.W / 2 - 280, panelY = 90, panelW = 560, panelH = 460;
 
         RenderUtils.drawGradientPanel(g, panelX, panelY, panelW, panelH,
-                new Color(30, 80, 140, 215),
-                new Color(15, 55, 100, 215),
-                new Color(91, 184, 232),
-                2f, 18);
+            new Color(30, 75, 20, 215),
+            new Color(15, 50, 10, 215),
+            new Color(90, 180, 65),
+            2f, 18);
 
         // ── Sound & Music ─────────────────────────────────────────────────────
         drawSectionLabel(g, "Sound & Music", panelX + 20, 130);
@@ -106,7 +106,7 @@ public class SettingsScreen extends Screen {
 
         String acc = panel.getAccountManager().getActiveAccountName();
         g.setFont(FontManager.getBody(12));
-        g.setColor(new Color(180, 220, 255));
+        g.setColor(new Color(180, 230, 150));
         g.drawString("Active: " + (acc != null ? acc : "None"), panelX + 300, 468);
 
         // ── Back button ───────────────────────────────────────────────────────
@@ -119,7 +119,7 @@ public class SettingsScreen extends Screen {
         g.setFont(FontManager.getBold(14));
         g.setColor(ColorPalette.TEXT_GOLD);
         g.drawString(label, x, y);
-        g.setColor(new Color(255, 220, 80, 100));
+        g.setColor(new Color(120, 220, 80, 100));
         g.setStroke(new BasicStroke(1f));
         g.drawLine(x, y + 4, x + 200, y + 4);
         g.setStroke(new BasicStroke(1f));
@@ -160,7 +160,7 @@ public class SettingsScreen extends Screen {
         g.setStroke(new BasicStroke(1f));
 
         g.setFont(FontManager.getBodyBold(12));
-        g.setColor(new Color(210, 240, 255));
+        g.setColor(new Color(200, 240, 170));
         g.drawString((int)(value * 100) + "%", sx + sw + 12, y + 16);
     }
 
